@@ -1,43 +1,10 @@
+#include "imgui/imgui.h"
 #include "raylib.h"
-#include <cstring>
+#include "rlImGui/rlImGui.h"
 #include <iostream>
-#include <netinet/in.h>
 #include <raylib.h>
-#include <sys/socket.h>
-#include <thread>
-#include <unistd.h>
 
 using namespace std;
-
-void listenInput() {
-  int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-
-  // specifying the address
-  sockaddr_in serverAddress;
-  serverAddress.sin_family = AF_INET;
-  serverAddress.sin_port = htons(8080);
-  serverAddress.sin_addr.s_addr = INADDR_ANY;
-
-  // binding socket.
-  bind(serverSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
-
-  cout << "Listening connections.." << '\n';
-  while (true) {
-    // listening to the assigned socket
-    listen(serverSocket, 5);
-
-    // accepting connection request
-    int clientSocket = accept(serverSocket, nullptr, nullptr);
-
-    // recieving data
-    char buffer[1024] = {0};
-    recv(clientSocket, buffer, sizeof(buffer), 0);
-    cout << "Message from client: " << buffer << endl;
-  }
-
-  // closing the socket.
-  close(serverSocket);
-}
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -48,12 +15,15 @@ int main(void) {
   const int screenWidth = 800;
   const int screenHeight = 450;
 
-  InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
+  int brushSize = 1;
+
+  InitWindow(screenWidth, screenHeight, "Pixel Editor");
 
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
-  //--------------------------------------------------------------------------------------
 
-  thread inpListen(listenInput);
+  rlImGuiSetup(true);
+
+  //--------------------------------------------------------------------------------------
 
   // Main game loop
   while (!WindowShouldClose()) // Detect window close button or ESC key
@@ -65,19 +35,35 @@ int main(void) {
 
     // Draw
     //----------------------------------------------------------------------------------
-    BeginDrawing();
-
     ClearBackground(RAYWHITE);
+    BeginDrawing();
+    rlImGuiBegin();
 
-    DrawText("Congrats! You created your first window!", 190, 200, 20,
-             LIGHTGRAY);
+    ImGui::SliderInt("Brush Size", &brushSize, 1, 10);
 
+    if (IsKeyPressed(KEY_Q)) {
+      ClearBackground(RAYWHITE);
+    }
+
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+      Vector2 mousePos = GetMousePosition();
+      for (int i = mousePos.x - brushSize; i <= mousePos.x + brushSize; i++) {
+        for (int j = mousePos.y - brushSize; j <= mousePos.y + brushSize; j++) {
+          if (i >= 0 && i < screenWidth && j >= 0 && j < screenHeight) {
+            DrawPixel(i, j, BLACK);
+          }
+        }
+      }
+    }
+
+    rlImGuiEnd();
     EndDrawing();
     //----------------------------------------------------------------------------------
   }
 
   // De-Initialization
   //--------------------------------------------------------------------------------------
+  rlImGuiShutdown();
   CloseWindow(); // Close window and OpenGL context
   //--------------------------------------------------------------------------------------
 
