@@ -7,6 +7,13 @@
 
 using namespace std;
 
+enum Tool {
+  Brush,
+  Line,
+  Rect,
+};
+
+// temporary global logic
 int g_brushSize = 1;
 float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
 Color g_brushColor = BLACK;
@@ -18,7 +25,7 @@ void ClearPixels(Color pixels[], int dataSize) {
   }
 }
 
-void DrawUIEssentials() {
+void DrawAndControlGUI() {
   ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
   ImGui::SliderInt("Brush Size", &g_brushSize, 1, 10);
 
@@ -40,26 +47,44 @@ void DrawUIEssentials() {
   }
 }
 
+const int g_screenWidth = 800;
+const int g_screenHeight = 450;
+const int g_pixelsSize = g_screenWidth * g_screenHeight;
+Color g_pixelColors[g_pixelsSize];
+
+// using texture like global increase performance.
+Texture2D g_screenTexture;
+
+void()
+
+    void DrawWithBrush() {
+  Vector2 mousePos = GetMousePosition();
+  for (int i = mousePos.x - g_brushSize; i <= mousePos.x + g_brushSize; i++) {
+    for (int j = mousePos.y - g_brushSize; j <= mousePos.y + g_brushSize; j++) {
+      if (i >= 0 && i < g_screenWidth && j >= 0 && j < g_screenHeight) {
+        g_pixelColors[i + j * g_screenWidth] = g_brushColor;
+      }
+    }
+  }
+  UpdateTexture(g_screenTexture, &g_pixelColors);
+}
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
 int main(void) {
   // Initialization
   //--------------------------------------------------------------------------------------
-  const int screenWidth = 800;
-  const int screenHeight = 450;
 
-  InitWindow(screenWidth, screenHeight, "Pixel Editor");
+  InitWindow(g_screenWidth, g_screenHeight, "Pixel Editor");
 
+  ClearPixels(g_pixelColors, g_pixelsSize);
+
+  Image g_image = {g_pixelColors, g_screenWidth, g_screenHeight, 1,
+                   PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
+
+  g_screenTexture = LoadTextureFromImage(g_image);
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
-
-  int pixelsSize = screenWidth * screenHeight;
-  Color pixelColors[pixelsSize];
-  ClearPixels(pixelColors, pixelsSize);
-
-  Image image = {pixelColors, screenWidth, screenHeight, 1,
-                 PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
-  Texture2D screenTexture = LoadTextureFromImage(image);
 
   rlImGuiSetup(true);
 
@@ -79,28 +104,12 @@ int main(void) {
     BeginDrawing();
     rlImGuiBegin();
 
-    DrawUIEssentials();
+    DrawAndControlGUI();
 
-    if (IsKeyPressed(KEY_Q)) {
-      ClearPixels(pixelColors, pixelsSize);
-      UpdateTexture(screenTexture, pixelColors);
-    }
-    DrawTexture(screenTexture, 0, 0, RAYWHITE);
+    DrawTexture(g_screenTexture, 0, 0, RAYWHITE);
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-      Vector2 mousePos = GetMousePosition();
-      for (int i = mousePos.x - g_brushSize; i <= mousePos.x + g_brushSize;
-           i++) {
-        for (int j = mousePos.y - g_brushSize; j <= mousePos.y + g_brushSize;
-             j++) {
-          if (i >= 0 && i < screenWidth && j >= 0 && j < screenHeight) {
-            pixelColors[i + j * screenWidth] = g_brushColor;
-          }
-        }
-      }
-      UpdateTexture(screenTexture, &pixelColors);
-      /*pixelColors[(int)mousePos.x * screenHeight + (int)mousePos.y] = BLACK;*/
-      /*UpdateTexture(screenTexture, pixelColors);*/
+      DrawWithBrush();
     }
 
     rlImGuiEnd();
