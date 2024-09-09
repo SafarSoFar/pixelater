@@ -51,16 +51,17 @@ const int g_screenWidth = 800;
 const int g_screenHeight = 450;
 const int g_pixelsSize = g_screenWidth * g_screenHeight;
 Color g_pixelColors[g_pixelsSize];
-
+Tool g_curTool = Tool::Brush;
 // using texture like global increase performance.
 Texture2D g_screenTexture;
+bool g_isHoldingLMB;
+Vector2 g_LMBHoldingFirstPos = {0.0f,0.0f};
+Vector2 g_LMBHoldingLastPos = {0.0f,0.0f};
 
-void()
 
-    void DrawWithBrush() {
-  Vector2 mousePos = GetMousePosition();
-  for (int i = mousePos.x - g_brushSize; i <= mousePos.x + g_brushSize; i++) {
-    for (int j = mousePos.y - g_brushSize; j <= mousePos.y + g_brushSize; j++) {
+void DrawWithBrush() {
+  for (int i = g_LMBHoldingLastPos.x - g_brushSize; i <= g_LMBHoldingLastPos.x + g_brushSize; i++) {
+    for (int j = g_LMBHoldingLastPos.y - g_brushSize; j <= g_LMBHoldingLastPos.y + g_brushSize; j++) {
       if (i >= 0 && i < g_screenWidth && j >= 0 && j < g_screenHeight) {
         g_pixelColors[i + j * g_screenWidth] = g_brushColor;
       }
@@ -69,6 +70,28 @@ void()
   UpdateTexture(g_screenTexture, &g_pixelColors);
 }
 
+
+void DrawWithLine(){
+  if(!g_isHoldingLMB){
+    g_LMBHoldingFirstPos = GetMousePosition();
+  }
+  g_LMBHoldingLastPos = GetMousePosition();
+}
+
+void DrawWithRectangle(){
+  
+}
+
+void Draw(){
+  switch(g_curTool){
+    case Brush: DrawWithBrush();
+        break;
+    case Line: DrawWithLine();
+        break;
+    case Rect: DrawWithRectangle();
+        break;
+  }
+}
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -109,7 +132,17 @@ int main(void) {
     DrawTexture(g_screenTexture, 0, 0, RAYWHITE);
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+      if(!g_isHoldingLMB){
+        g_isHoldingLMB = true;
+        g_LMBHoldingFirstPos = GetMousePosition();
+      }
+      g_LMBHoldingLastPos = GetMousePosition();
       DrawWithBrush();
+    }
+    else{
+      if(g_isHoldingLMB){
+        g_isHoldingLMB = false;
+      }
     }
 
     rlImGuiEnd();
