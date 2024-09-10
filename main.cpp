@@ -1,11 +1,16 @@
 #include "imgui/imgui.h"
 #include "raylib.h"
 #include "rlImGui/rlImGui.h"
+#include <cmath>
 #include <iostream>
 #include <iterator>
 #include <raylib.h>
 
 using namespace std;
+
+bool operator==(Vector2 lhs, Vector2 rhs) {
+  return lhs.x == rhs.x && lhs.y == rhs.y;
+}
 
 enum Tool {
   Brush,
@@ -25,11 +30,76 @@ void ClearPixels(Color pixels[], int dataSize) {
   }
 }
 
+const int g_screenWidth = 800;
+const int g_screenHeight = 450;
+const int g_pixelsSize = g_screenWidth * g_screenHeight;
+Color g_pixelColors[g_pixelsSize];
+Tool g_curTool = Tool::Brush;
+// using texture like global increase performance.
+Texture2D g_screenTexture;
+Vector2 g_lastMousePos = {0.0f, 0.0f};
+bool g_isHoldingLMB;
+Vector2 g_LMBHoldingFirstPos = {0.0f, 0.0f};
+Vector2 g_LMBHoldingLastPos = {0.0f, 0.0f};
+
+void DrawWithBrush() {
+  for (int i = g_lastMousePos.x - g_brushSize;
+       i <= g_lastMousePos.x + g_brushSize; i++) {
+    for (int j = g_lastMousePos.y - g_brushSize;
+         j <= g_lastMousePos.y + g_brushSize; j++) {
+      if (i >= 0 && i < g_screenWidth && j >= 0 && j < g_screenHeight) {
+        g_pixelColors[i + j * g_screenWidth] = g_brushColor;
+      }
+    }
+  }
+  UpdateTexture(g_screenTexture, &g_pixelColors);
+}
+
+void DrawWithLine() {
+  if (g_LMBHoldingFirstPos == g_LMBHoldingLastPos) {
+    return;
+  }
+  float x0 = g_LMBHoldingFirstPos.x;
+  float x1 = g_LMBHoldingLastPos.x;
+  float y0 = g_LMBHoldingFirstPos.y;
+  float y1 = g_LMBHoldingLastPos.y;
+
+  float x = x1 - x0;
+  float y = y1 - y0;
+  const float max = std::max(std::fabs(x), std::fabs(y));
+  x /= max;
+  y /= max;
+  for (int i = 0; i < max; i++) {
+    g_pixelColors[(int)x0 + (int)y0 * g_screenWidth] = g_brushColor;
+    x0 += x;
+    y0 += y;
+  }
+
+  UpdateTexture(g_screenTexture, &g_pixelColors);
+}
+
+void DrawWithRectangle() {}
+
+void Draw() {
+  switch (g_curTool) {
+  case Brush:
+    DrawWithBrush();
+    break;
+  case Line:
+    DrawWithLine();
+    break;
+  case Rect:
+    DrawWithRectangle();
+    break;
+  }
+}
+
 void DrawAndControlGUI() {
   ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
   ImGui::SliderInt("Brush Size", &g_brushSize, 1, 10);
 
-  // Changing brush color only on release for optimization reasons
+  // Color choosing for drawing
+  // Changing color only on release for optimization reasons
   if (ImGui::ColorPicker4("Brush color", g_imGuiColorFloat)) {
     if (!g_isColorPickerPressed) {
       g_isColorPickerPressed = true;
@@ -45,51 +115,13 @@ void DrawAndControlGUI() {
       g_isColorPickerPressed = false;
     }
   }
-}
 
-const int g_screenWidth = 800;
-const int g_screenHeight = 450;
-const int g_pixelsSize = g_screenWidth * g_screenHeight;
-Color g_pixelColors[g_pixelsSize];
-Tool g_curTool = Tool::Brush;
-// using texture like global increase performance.
-Texture2D g_screenTexture;
-bool g_isHoldingLMB;
-Vector2 g_LMBHoldingFirstPos = {0.0f,0.0f};
-Vector2 g_LMBHoldingLastPos = {0.0f,0.0f};
-
-
-void DrawWithBrush() {
-  for (int i = g_LMBHoldingLastPos.x - g_brushSize; i <= g_LMBHoldingLastPos.x + g_brushSize; i++) {
-    for (int j = g_LMBHoldingLastPos.y - g_brushSize; j <= g_LMBHoldingLastPos.y + g_brushSize; j++) {
-      if (i >= 0 && i < g_screenWidth && j >= 0 && j < g_screenHeight) {
-        g_pixelColors[i + j * g_screenWidth] = g_brushColor;
-      }
-    }
+  if (ImGui::Button("Clear Canvas")) {
+    ClearPixels(g_pixelColors, g_pixelsSize);
+    UpdateTexture(g_screenTexture, &g_pixelColors);
   }
-  UpdateTexture(g_screenTexture, &g_pixelColors);
-}
-
-
-void DrawWithLine(){
-  if(!g_isHoldingLMB){
-    g_LMBHoldingFirstPos = GetMousePosition();
-  }
-  g_LMBHoldingLastPos = GetMousePosition();
-}
-
-void DrawWithRectangle(){
-  
-}
-
-void Draw(){
-  switch(g_curTool){
-    case Brush: DrawWithBrush();
-        break;
-    case Line: DrawWithLine();
-        break;
-    case Rect: DrawWithRectangle();
-        break;
+  if (ImGui::Button("Draw Line")) {
+    g_curTool = Tool::Line;
   }
 }
 //------------------------------------------------------------------------------------
@@ -131,16 +163,19 @@ int main(void) {
 
     DrawTexture(g_screenTexture, 0, 0, RAYWHITE);
 
+    g_lastMousePos = GetMousePosition();
+
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-      if(!g_isHoldingLMB){
+      if (!g_isHoldingLMB) {
         g_isHoldingLMB = true;
-        g_LMBHoldingFirstPos = GetMousePosition();
+        g_LMBHoldingFirstPos = g_lastMousePos;
       }
-      g_LMBHoldingLastPos = GetMousePosition();
-      DrawWithBrush();
-    }
-    else{
-      if(g_isHoldingLMB){
+      g_LMBHoldingLastPos = g_lastMousePos;
+
+      Draw();
+
+    } else {
+      if (g_isHoldingLMB) {
         g_isHoldingLMB = false;
       }
     }
