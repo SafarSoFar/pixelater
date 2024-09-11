@@ -19,11 +19,13 @@ enum Tool {
   Rect,
 };
 
+
 // temporary global logic
 int g_brushSize = 1;
 float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
 Color g_brushColor = BLACK;
 bool g_isColorPickerPressed;
+
 
 void ClearPixels(Color pixels[], int dataSize) {
   for (int i = 0; i < dataSize; i++) {
@@ -45,12 +47,16 @@ bool g_isHoldingLMB;
 Vector2 g_LMBHoldingFirstPos = {0.0f, 0.0f};
 Vector2 g_LMBHoldingLastPos = {0.0f, 0.0f};
 
+bool IsOutsideOfScreen(int x, int y){
+  return x < 0 || y < 0 || x >= g_screenWidth || y >= g_screenHeight; 
+}
+
 void DrawWithBrush() {
   for (int i = g_lastMousePos.x - g_brushSize;
        i <= g_lastMousePos.x + g_brushSize; i++) {
     for (int j = g_lastMousePos.y - g_brushSize;
          j <= g_lastMousePos.y + g_brushSize; j++) {
-      if (i >= 0 && i < g_screenWidth && j >= 0 && j < g_screenHeight) {
+      if (!IsOutsideOfScreen(i, j)){
         g_tmpCanvasPixels[i + j * g_screenWidth] = g_brushColor;
       }
     }
@@ -59,20 +65,19 @@ void DrawWithBrush() {
 }
 
 void DrawWithLine() {
+
   float x0 = g_LMBHoldingFirstPos.x;
   float x1 = g_LMBHoldingLastPos.x;
   float y0 = g_LMBHoldingFirstPos.y;
   float y1 = g_LMBHoldingLastPos.y;
 
   // checking screen boundaries to prevent segfault
-  if(x0 < 0 || x1 < 0 || x0 >= g_screenWidth || x1 >= g_screenWidth
-      || y0 < 0 || y1 < 0 || y0 >= g_screenHeight || y1 >= g_screenHeight){
+  if(IsOutsideOfScreen(x0, y0) || IsOutsideOfScreen(x1, y1)){
     return;
   }
 
   // resetting the buffer to draw only one line at the time
   memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_pixelsSize * sizeof(Color));
-
 
   float x = x1 - x0;
   float y = y1 - y0;
@@ -83,9 +88,18 @@ void DrawWithLine() {
   y /= max;
 
   for (int i = 0; i < max; i++) {
-    g_tmpCanvasPixels[(int)x0 + (int)y0 * g_screenWidth] = g_brushColor;
+
+    for(int width = x0 - g_brushSize; width <= x0 + g_brushSize; width++){
+      for(int height = y0 - g_brushSize; height <= y0 + g_brushSize; height++){
+        if(!IsOutsideOfScreen(width, height)){
+          g_tmpCanvasPixels[(int)width + (int)height * g_screenWidth] = g_brushColor;
+        }
+      }
+    }
+
     x0 += x;
     y0 += y;
+
   }
   UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
 }
@@ -179,7 +193,6 @@ int main(void) {
 
     DrawAndControlGUI();
 
-    DrawTexture(g_mainCanvasTexture, 0, 0, RAYWHITE);
 
     g_lastMousePos = GetMousePosition();
 
@@ -194,9 +207,13 @@ int main(void) {
       Draw();
 
     } else {
+
       if (g_isHoldingLMB) {
         g_isHoldingLMB = false;
       }
+
+      DrawTexture(g_mainCanvasTexture, 0, 0, RAYWHITE);
+
     }
     
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
