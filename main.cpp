@@ -17,6 +17,8 @@ enum Tool {
   Brush,
   Line,
   Rect,
+  Eraser,
+  Circle,
 };
 
 
@@ -51,13 +53,13 @@ bool IsOutsideOfScreen(int x, int y){
   return x < 0 || y < 0 || x >= g_screenWidth || y >= g_screenHeight; 
 }
 
-void DrawWithBrush() {
+void DrawWithBrush(Color colorToDraw) {
   for (int i = g_lastMousePos.x - g_brushSize;
        i <= g_lastMousePos.x + g_brushSize; i++) {
     for (int j = g_lastMousePos.y - g_brushSize;
          j <= g_lastMousePos.y + g_brushSize; j++) {
       if (!IsOutsideOfScreen(i, j)){
-        g_tmpCanvasPixels[i + j * g_screenWidth] = g_brushColor;
+        g_tmpCanvasPixels[i + j * g_screenWidth] = colorToDraw;
       }
     }
   }
@@ -106,16 +108,31 @@ void DrawWithLine() {
 
 void DrawWithRectangle() {}
 
+void DrawWithCircle(){
+  for(double angle = 0; angle<2*PI; angle+=0.001){
+  int x0 = g_lastMousePos.x + g_brushSize*cos(angle);
+  int y0 = g_lastMousePos.y + g_brushSize*sin(angle);
+    g_tmpCanvasPixels[x0 + y0 * g_screenWidth] = g_brushColor;  
+  }
+  UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
+}
+
 void Draw() {
   switch (g_curTool) {
   case Brush:
-    DrawWithBrush();
+    DrawWithBrush(g_brushColor);
     break;
   case Line:
     DrawWithLine();
     break;
   case Rect:
     DrawWithRectangle();
+    break;
+  case Eraser:
+    DrawWithBrush(WHITE);
+    break;
+  case Circle:
+    DrawWithCircle();
     break;
   }
 }
@@ -154,7 +171,20 @@ void DrawAndControlGUI() {
   if (ImGui::Button("Brush")) {
     g_curTool = Tool::Brush;
   }
+  if (ImGui::Button("Eraser")) {
+    g_curTool = Tool::Eraser;
+  }
+  if (ImGui::Button("Circle")) {
+    g_curTool = Tool::Circle;
+  }
 }
+
+
+// buggy
+/*void DrawSizeCursor(){*/
+/*  DrawCircleLines(g_lastMousePos.x, g_lastMousePos.y, g_brushSize, BLACK);*/
+/*}*/
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -187,7 +217,7 @@ int main(void) {
 
     // Draw
     //----------------------------------------------------------------------------------
-    ClearBackground(RAYWHITE);
+    ClearBackground(WHITE);
     BeginDrawing();
     rlImGuiBegin();
 
@@ -196,6 +226,9 @@ int main(void) {
 
     g_lastMousePos = GetMousePosition();
 
+    /*DrawSizeCursor();*/
+
+
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
       if (!g_isHoldingLMB) {
         g_isHoldingLMB = true;
@@ -203,7 +236,7 @@ int main(void) {
       }
       g_LMBHoldingLastPos = g_lastMousePos;
 
-      DrawTexture(g_tmpCanvasTexture, 0,0,RAYWHITE);
+      DrawTexture(g_tmpCanvasTexture, 0,0,WHITE);
       Draw();
 
     } else {
@@ -212,7 +245,7 @@ int main(void) {
         g_isHoldingLMB = false;
       }
 
-      DrawTexture(g_mainCanvasTexture, 0, 0, RAYWHITE);
+      DrawTexture(g_mainCanvasTexture, 0, 0, WHITE);
 
     }
     
