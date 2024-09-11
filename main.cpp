@@ -59,25 +59,35 @@ void DrawWithBrush() {
 }
 
 void DrawWithLine() {
-  /*if (g_LMBHoldingFirstPos == g_LMBHoldingLastPos) {*/
-  /*  return;*/
-  /*}*/
   float x0 = g_LMBHoldingFirstPos.x;
   float x1 = g_LMBHoldingLastPos.x;
   float y0 = g_LMBHoldingFirstPos.y;
   float y1 = g_LMBHoldingLastPos.y;
 
+  // checking screen boundaries to prevent segfault
+  if(x0 < 0 || x1 < 0 || x0 >= g_screenWidth || x1 >= g_screenWidth
+      || y0 < 0 || y1 < 0 || y0 >= g_screenHeight || y1 >= g_screenHeight){
+    return;
+  }
+
+  // resetting the buffer to draw only one line at the time
+  memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_pixelsSize * sizeof(Color));
+
+
   float x = x1 - x0;
   float y = y1 - y0;
+
   const float max = std::max(std::fabs(x), std::fabs(y));
+
   x /= max;
   y /= max;
+
   for (int i = 0; i < max; i++) {
-    g_mainCanvasPixels[(int)x0 + (int)y0 * g_screenWidth] = g_brushColor;
+    g_tmpCanvasPixels[(int)x0 + (int)y0 * g_screenWidth] = g_brushColor;
     x0 += x;
     y0 += y;
   }
-  UpdateTexture(g_mainCanvasTexture, &g_mainCanvasPixels);
+  UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
 }
 
 void DrawWithRectangle() {}
