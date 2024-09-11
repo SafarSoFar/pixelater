@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "rlImGui/rlImGui.h"
 #include <cmath>
+#include <cstring>
 #include <iostream>
 #include <iterator>
 #include <raylib.h>
@@ -33,10 +34,12 @@ void ClearPixels(Color pixels[], int dataSize) {
 const int g_screenWidth = 800;
 const int g_screenHeight = 450;
 const int g_pixelsSize = g_screenWidth * g_screenHeight;
-Color g_pixelColors[g_pixelsSize];
+Color g_mainCanvasPixels[g_pixelsSize];
+Color g_tmpCanvasPixels[g_pixelsSize];
 Tool g_curTool = Tool::Brush;
 // using texture like global increase performance.
-Texture2D g_screenTexture;
+Texture2D g_mainCanvasTexture;
+Texture2D g_tmpCanvasTexture;
 Vector2 g_lastMousePos = {0.0f, 0.0f};
 bool g_isHoldingLMB;
 Vector2 g_LMBHoldingFirstPos = {0.0f, 0.0f};
@@ -48,17 +51,17 @@ void DrawWithBrush() {
     for (int j = g_lastMousePos.y - g_brushSize;
          j <= g_lastMousePos.y + g_brushSize; j++) {
       if (i >= 0 && i < g_screenWidth && j >= 0 && j < g_screenHeight) {
-        g_pixelColors[i + j * g_screenWidth] = g_brushColor;
+        g_tmpCanvasPixels[i + j * g_screenWidth] = g_brushColor;
       }
     }
   }
-  UpdateTexture(g_screenTexture, &g_pixelColors);
+  UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
 }
 
 void DrawWithLine() {
-  if (g_LMBHoldingFirstPos == g_LMBHoldingLastPos) {
-    return;
-  }
+  /*if (g_LMBHoldingFirstPos == g_LMBHoldingLastPos) {*/
+  /*  return;*/
+  /*}*/
   float x0 = g_LMBHoldingFirstPos.x;
   float x1 = g_LMBHoldingLastPos.x;
   float y0 = g_LMBHoldingFirstPos.y;
@@ -70,12 +73,11 @@ void DrawWithLine() {
   x /= max;
   y /= max;
   for (int i = 0; i < max; i++) {
-    g_pixelColors[(int)x0 + (int)y0 * g_screenWidth] = g_brushColor;
+    g_mainCanvasPixels[(int)x0 + (int)y0 * g_screenWidth] = g_brushColor;
     x0 += x;
     y0 += y;
   }
-
-  UpdateTexture(g_screenTexture, &g_pixelColors);
+  UpdateTexture(g_mainCanvasTexture, &g_mainCanvasPixels);
 }
 
 void DrawWithRectangle() {}
@@ -117,11 +119,16 @@ void DrawAndControlGUI() {
   }
 
   if (ImGui::Button("Clear Canvas")) {
-    ClearPixels(g_pixelColors, g_pixelsSize);
-    UpdateTexture(g_screenTexture, &g_pixelColors);
+    ClearPixels(g_mainCanvasPixels, g_pixelsSize);
+    ClearPixels(g_tmpCanvasPixels, g_pixelsSize);
+    UpdateTexture(g_mainCanvasTexture, &g_mainCanvasPixels);
+    UpdateTexture(g_tmpCanvasTexture, &g_mainCanvasPixels);
   }
-  if (ImGui::Button("Draw Line")) {
+  if (ImGui::Button("Line")) {
     g_curTool = Tool::Line;
+  }
+  if (ImGui::Button("Brush")) {
+    g_curTool = Tool::Brush;
   }
 }
 //------------------------------------------------------------------------------------
@@ -133,12 +140,13 @@ int main(void) {
 
   InitWindow(g_screenWidth, g_screenHeight, "Pixel Editor");
 
-  ClearPixels(g_pixelColors, g_pixelsSize);
+  ClearPixels(g_mainCanvasPixels, g_pixelsSize);
 
-  Image g_image = {g_pixelColors, g_screenWidth, g_screenHeight, 1,
+  Image g_image = {g_mainCanvasPixels, g_screenWidth, g_screenHeight, 1,
                    PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
 
-  g_screenTexture = LoadTextureFromImage(g_image);
+  g_mainCanvasTexture = LoadTextureFromImage(g_image);
+  g_tmpCanvasTexture = LoadTextureFromImage(g_image);
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
 
   rlImGuiSetup(true);
@@ -161,7 +169,7 @@ int main(void) {
 
     DrawAndControlGUI();
 
-    DrawTexture(g_screenTexture, 0, 0, RAYWHITE);
+    DrawTexture(g_mainCanvasTexture, 0, 0, RAYWHITE);
 
     g_lastMousePos = GetMousePosition();
 
@@ -172,12 +180,20 @@ int main(void) {
       }
       g_LMBHoldingLastPos = g_lastMousePos;
 
+      DrawTexture(g_tmpCanvasTexture, 0,0,RAYWHITE);
       Draw();
 
     } else {
       if (g_isHoldingLMB) {
         g_isHoldingLMB = false;
       }
+    }
+    
+    if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
+      /*g_mainCanvasPixels = g_tmpCanvasPixels;*/
+      memcpy(g_mainCanvasPixels, g_tmpCanvasPixels, g_pixelsSize * sizeof(Color));
+      //g_mainCanvasPixels = g_tmpCanvasPixels;
+      UpdateTexture(g_mainCanvasTexture, &g_mainCanvasPixels);
     }
 
     rlImGuiEnd();
