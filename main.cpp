@@ -11,6 +11,7 @@ using namespace std;
 
 bool operator==(Vector2 lhs, Vector2 rhs) {
   return lhs.x == rhs.x && lhs.y == rhs.y;
+  
 }
 
 enum Tool {
@@ -21,11 +22,15 @@ enum Tool {
   Circle,
 };
 
+enum BrushShape{
+  SquareBrush,
+  CircleBrush
+};
 
 // temporary global logic
 int g_brushSize = 1;
 float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
-Color g_brushColor = BLACK;
+Color g_drawingColor = BLACK;
 bool g_isColorPickerPressed;
 
 
@@ -41,6 +46,8 @@ const int g_pixelsSize = g_screenWidth * g_screenHeight;
 Color g_mainCanvasPixels[g_pixelsSize];
 Color g_tmpCanvasPixels[g_pixelsSize];
 Tool g_curTool = Tool::Brush;
+BrushShape g_brushShape = BrushShape::SquareBrush;
+
 // using texture like global increase performance.
 Texture2D g_mainCanvasTexture;
 Texture2D g_tmpCanvasTexture;
@@ -53,16 +60,35 @@ bool IsOutsideOfScreen(int x, int y){
   return x < 0 || y < 0 || x >= g_screenWidth || y >= g_screenHeight; 
 }
 
-void DrawWithBrush(Color colorToDraw) {
-  for (int i = g_lastMousePos.x - g_brushSize;
-       i <= g_lastMousePos.x + g_brushSize; i++) {
-    for (int j = g_lastMousePos.y - g_brushSize;
-         j <= g_lastMousePos.y + g_brushSize; j++) {
-      if (!IsOutsideOfScreen(i, j)){
-        g_tmpCanvasPixels[i + j * g_screenWidth] = colorToDraw;
+void DrawFilledSquare(int originX, int originY, int size, Color color){
+    for (int i = originX - size;
+        i <= originX + size; i++) {
+      for (int j = originY - size;
+          j <= originY + size; j++) {
+        if (!IsOutsideOfScreen(i, j)){
+          g_tmpCanvasPixels[i + j * g_screenWidth] = color;
+        }
       }
     }
+}
+
+void DrawWithBrush(Color colorToDraw) {
+  /*if(g_brushShape == BrushShape::SquareBrush){
+    for (int i = g_lastMousePos.x - g_brushSize;
+        i <= g_lastMousePos.x + g_brushSize; i++) {
+      for (int j = g_lastMousePos.y - g_brushSize;
+          j <= g_lastMousePos.y + g_brushSize; j++) {
+        if (!IsOutsideOfScreen(i, j)){
+          g_tmpCanvasPixels[i + j * g_screenWidth] = g_drawingColor;
+        }
+      }
+    }
+  }*/
+
+  if(g_brushShape == BrushShape::SquareBrush){
+    DrawFilledSquare(g_lastMousePos.x, g_lastMousePos.y, g_brushSize, colorToDraw);
   }
+
   UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
 }
 
@@ -94,7 +120,7 @@ void DrawWithLine() {
     for(int width = x0 - g_brushSize; width <= x0 + g_brushSize; width++){
       for(int height = y0 - g_brushSize; height <= y0 + g_brushSize; height++){
         if(!IsOutsideOfScreen(width, height)){
-          g_tmpCanvasPixels[(int)width + (int)height * g_screenWidth] = g_brushColor;
+          g_tmpCanvasPixels[(int)width + (int)height * g_screenWidth] = g_drawingColor;
         }
       }
     }
@@ -112,19 +138,26 @@ void DrawWithCircle(){
   for(double angle = 0; angle<2*PI; angle+=0.001){
   int x0 = g_lastMousePos.x + g_brushSize*cos(angle);
   int y0 = g_lastMousePos.y + g_brushSize*sin(angle);
-    g_tmpCanvasPixels[x0 + y0 * g_screenWidth] = g_brushColor;  
+    g_tmpCanvasPixels[x0 + y0 * g_screenWidth] = g_drawingColor;  
   }
   UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
 }
 
+void DrawWithSquareBrush(){
+
+}
+
+void DrawWithCircleBrush(){
+
+}
+
 void Draw() {
-  switch (g_curTool) {
-  case Brush:
-    DrawWithBrush(g_brushColor);
-    break;
+  switch (g_curTool) {  
   case Line:
     DrawWithLine();
     break;
+  case Brush:
+    DrawWithBrush(g_drawingColor);
   case Rect:
     DrawWithRectangle();
     break;
@@ -153,7 +186,7 @@ void DrawAndControlGUI() {
       unsigned char g = g_imGuiColorFloat[1] * 255;
       unsigned char b = g_imGuiColorFloat[2] * 255;
       unsigned char a = g_imGuiColorFloat[3] * 255;
-      g_brushColor = {r, g, b, a};
+      g_drawingColor = {r, g, b, a};
 
       g_isColorPickerPressed = false;
     }
