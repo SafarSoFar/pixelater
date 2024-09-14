@@ -60,6 +60,14 @@ bool IsOutsideOfScreen(int x, int y){
   return x < 0 || y < 0 || x >= g_screenWidth || y >= g_screenHeight; 
 }
 
+void DrawCircleOutline(){
+  for(double angle = 0; angle<2*PI; angle+=0.001){
+  int x0 = g_lastMousePos.x + g_brushSize*cos(angle);
+  int y0 = g_lastMousePos.y + g_brushSize*sin(angle);
+    g_tmpCanvasPixels[x0 + y0 * g_screenWidth] = g_drawingColor;  
+  }
+}
+
 void DrawFilledSquare(int originX, int originY, int size, Color color){
     for (int i = originX - size;
         i <= originX + size; i++) {
@@ -71,6 +79,8 @@ void DrawFilledSquare(int originX, int originY, int size, Color color){
       }
     }
 }
+
+//void DrawFilledCircles(int )
 
 void DrawWithBrush(Color colorToDraw) {
   /*if(g_brushShape == BrushShape::SquareBrush){
@@ -87,6 +97,9 @@ void DrawWithBrush(Color colorToDraw) {
 
   if(g_brushShape == BrushShape::SquareBrush){
     DrawFilledSquare(g_lastMousePos.x, g_lastMousePos.y, g_brushSize, colorToDraw);
+  }
+  else{
+    DrawCircleOutline();
   }
 
   UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
@@ -134,22 +147,8 @@ void DrawWithLine() {
 
 void DrawWithRectangle() {}
 
-void DrawWithCircle(){
-  for(double angle = 0; angle<2*PI; angle+=0.001){
-  int x0 = g_lastMousePos.x + g_brushSize*cos(angle);
-  int y0 = g_lastMousePos.y + g_brushSize*sin(angle);
-    g_tmpCanvasPixels[x0 + y0 * g_screenWidth] = g_drawingColor;  
-  }
-  UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
-}
 
-void DrawWithSquareBrush(){
 
-}
-
-void DrawWithCircleBrush(){
-
-}
 
 void Draw() {
   switch (g_curTool) {  
@@ -165,7 +164,7 @@ void Draw() {
     DrawWithBrush(WHITE);
     break;
   case Circle:
-    DrawWithCircle();
+    DrawCircleOutline();
     break;
   }
 }
@@ -209,6 +208,12 @@ void DrawAndControlGUI() {
   }
   if (ImGui::Button("Circle")) {
     g_curTool = Tool::Circle;
+  }
+  if (ImGui::Button("Brush: Circle")) {
+    g_brushShape = BrushShape::CircleBrush;
+  }
+  if (ImGui::Button("Brush: Square")) {
+    g_brushShape = BrushShape::SquareBrush;
   }
 }
 
