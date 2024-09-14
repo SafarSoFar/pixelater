@@ -2,6 +2,8 @@
 #include "raylib.h"
 #include "rlImGui/rlImGui.h"
 #include <cmath>
+#include <vector>
+#include <queue>
 #include <cstring>
 #include <iostream>
 #include <iterator>
@@ -11,7 +13,11 @@ using namespace std;
 
 bool operator==(Vector2 lhs, Vector2 rhs) {
   return lhs.x == rhs.x && lhs.y == rhs.y;
-  
+}
+
+
+bool operator==(Color lhs, Color rhs){
+  return lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
 }
 
 enum Tool {
@@ -20,6 +26,7 @@ enum Tool {
   Rect,
   Eraser,
   Circle,
+  Fill
 };
 
 enum BrushShape{
@@ -47,6 +54,7 @@ Color g_mainCanvasPixels[g_pixelsSize];
 Color g_tmpCanvasPixels[g_pixelsSize];
 Tool g_curTool = Tool::Brush;
 BrushShape g_brushShape = BrushShape::SquareBrush;
+bool g_isFillingCanvas = false;
 
 // using texture like global increase performance.
 Texture2D g_mainCanvasTexture;
@@ -60,11 +68,65 @@ bool IsOutsideOfScreen(int x, int y){
   return x < 0 || y < 0 || x >= g_screenWidth || y >= g_screenHeight; 
 }
 
-void DrawCircleOutline(){
-  for(double angle = 0; angle<2*PI; angle+=0.001){
-  int x0 = g_lastMousePos.x + g_brushSize*cos(angle);
-  int y0 = g_lastMousePos.y + g_brushSize*sin(angle);
-    g_tmpCanvasPixels[x0 + y0 * g_screenWidth] = g_drawingColor;  
+/*void RecursiveFill(int x, int y, Color colorToFill, Color fillColor){*/
+/*  g_tmpCanvasPixels*/
+/*}*/
+
+void FillWithColor(Color fillColor){
+  if(g_isFillingCanvas)
+    return;
+
+  g_isFillingCanvas = true;
+  int originX = g_lastMousePos.x;
+  int originY = g_lastMousePos.y;
+  Color colorToFill = g_mainCanvasPixels[originX + originY * g_screenWidth];
+
+  // Worst case scenario fill memory usage - fill full screen
+  vector<vector<bool>> isVis(g_screenWidth, vector<bool>(g_screenHeight, false));
+  queue<pair<int,int>> q;
+
+  q.push({originX, originY});
+  isVis[originX][originY] = true;
+
+  while(q.size()){
+
+    pair<int,int> coords = q.front();
+    g_tmpCanvasPixels[coords.first + coords.second * g_screenWidth] = fillColor;
+
+    q.pop();
+
+    if(coords.first+1 < g_screenWidth && 
+    g_tmpCanvasPixels[coords.first+1 + coords.second * g_screenWidth] == colorToFill && !isVis[coords.first+1][coords.second]){
+
+      q.push({coords.first+1, coords.second});
+      isVis[coords.first+1][coords.second] = true;
+    }
+    if(coords.first-1 >= 0 && g_tmpCanvasPixels[coords.first-1 + coords.second * g_screenWidth] == colorToFill && !isVis[coords.first-1][coords.second]){
+      q.push({coords.first-1, coords.second});
+      isVis[coords.first-1][coords.second] = true;
+    }
+
+    if(coords.second+1 < g_screenHeight && g_tmpCanvasPixels[coords.first + coords.second+1 * g_screenWidth] == colorToFill && !isVis[coords.first][coords.second+1]){
+      q.push({coords.first, coords.second+1});
+      isVis[coords.first][coords.second+1] = true;
+    }
+    if(coords.second-1 >= 0 && g_tmpCanvasPixels[coords.first + coords.second-1 * g_screenWidth] == colorToFill && !isVis[coords.first][coords.second-1]){
+      q.push({coords.first, coords.second-1});
+      isVis[coords.first][coords.second-1] = true;
+    }
+  }
+  g_isFillingCanvas = false;
+  /*thread::slle*/
+}
+
+
+void DrawCircle(int originX, int originY, int size, Color color){
+  for(double angle = 0; angle<2*PI; angle+=0.01){
+    for(int radius = 0; radius < size; radius++){
+      int x0 = originX + radius*cos(angle);
+      int y0 = originY + radius*sin(angle);
+      g_tmpCanvasPixels[x0 + y0 * g_screenWidth] = color;  
+    }
   }
 }
 
@@ -80,29 +142,16 @@ void DrawFilledSquare(int originX, int originY, int size, Color color){
     }
 }
 
-//void DrawFilledCircles(int )
 
 void DrawWithBrush(Color colorToDraw) {
-  /*if(g_brushShape == BrushShape::SquareBrush){
-    for (int i = g_lastMousePos.x - g_brushSize;
-        i <= g_lastMousePos.x + g_brushSize; i++) {
-      for (int j = g_lastMousePos.y - g_brushSize;
-          j <= g_lastMousePos.y + g_brushSize; j++) {
-        if (!IsOutsideOfScreen(i, j)){
-          g_tmpCanvasPixels[i + j * g_screenWidth] = g_drawingColor;
-        }
-      }
-    }
-  }*/
 
   if(g_brushShape == BrushShape::SquareBrush){
     DrawFilledSquare(g_lastMousePos.x, g_lastMousePos.y, g_brushSize, colorToDraw);
   }
   else{
-    DrawCircleOutline();
+    DrawCircle(g_lastMousePos.x, g_lastMousePos.y, g_brushSize, colorToDraw);
   }
 
-  UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
 }
 
 void DrawWithLine() {
@@ -142,7 +191,6 @@ void DrawWithLine() {
     y0 += y;
 
   }
-  UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
 }
 
 void DrawWithRectangle() {}
@@ -164,14 +212,18 @@ void Draw() {
     DrawWithBrush(WHITE);
     break;
   case Circle:
-    DrawCircleOutline();
+    //DrawCircle();
+    break;
+  case Fill:
+    FillWithColor(g_drawingColor);
     break;
   }
+  UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
 }
 
 void DrawAndControlGUI() {
   ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
-  ImGui::SliderInt("Brush Size", &g_brushSize, 1, 10);
+  ImGui::SliderInt("Brush Size", &g_brushSize, 1, 20);
 
   // Color choosing for drawing
   // Changing color only on release for optimization reasons
@@ -208,6 +260,9 @@ void DrawAndControlGUI() {
   }
   if (ImGui::Button("Circle")) {
     g_curTool = Tool::Circle;
+  }
+  if (ImGui::Button("Fill")) {
+    g_curTool = Tool::Fill;
   }
   if (ImGui::Button("Brush: Circle")) {
     g_brushShape = BrushShape::CircleBrush;
