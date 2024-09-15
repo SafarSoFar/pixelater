@@ -21,6 +21,9 @@ enum BrushShape{
   CircleBrush
 };
 
+
+bool operator==(Color lhs, Color rhs);
+
 class PixelDraw{
   public: 
     Tool curTool;

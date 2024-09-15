@@ -5,7 +5,6 @@ bool operator==(Color lhs, Color rhs){
   return lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
 }
 
-
 bool PixelDraw::IsOutsideOfScreen(int x, int y){
   return x < 0 || y < 0 || x >= m_screenWidth || y >= m_screenHeight; 
 }
@@ -138,6 +137,7 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
 
   }
 }
+
 
 void PixelDraw::DrawWithRectangle() {}
 
