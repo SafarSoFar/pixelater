@@ -1,4 +1,5 @@
 #include "imgui/imgui.h"
+#include "pixel-draw.h"
 #include "raylib.h"
 #include "rlImGui/rlImGui.h"
 #include <cmath>
@@ -20,19 +21,7 @@ bool operator==(Color lhs, Color rhs){
   return lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
 }
 
-enum Tool {
-  Brush,
-  Line,
-  Rect,
-  Eraser,
-  Circle,
-  Fill
-};
 
-enum BrushShape{
-  SquareBrush,
-  CircleBrush
-};
 
 // temporary global logic
 int g_brushSize = 1;
