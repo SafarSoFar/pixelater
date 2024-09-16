@@ -40,6 +40,7 @@ Color g_tmpCanvasPixels[g_pixelsSize];
 Texture2D g_mainCanvasTexture;
 Texture2D g_tmpCanvasTexture;
 bool g_isHoldingLMB;
+bool g_canInteractWithCanvas = true;
 Vector2 g_LMBHoldingFirstPos = {0.0f, 0.0f};
 Vector2 g_lastMousePos = {0.0f, 0.0f};
 
@@ -71,6 +72,7 @@ void Draw() {
 void DrawAndControlGUI() {
   ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
   ImGui::SliderInt("Brush Size", &g_pixelDraw.curBrushSize, 1, 20);
+
 
   // Color choosing for drawing
   // Changing color only on release for optimization reasons
@@ -117,6 +119,7 @@ void DrawAndControlGUI() {
   if (ImGui::Button("Brush: Square")) {
     g_pixelDraw.curBrushShape = BrushShape::SquareBrush;
   }
+
 }
 
 
@@ -145,6 +148,8 @@ int main(void) {
 
   rlImGuiSetup(true);
 
+  ImGuiIO& io = ImGui::GetIO();
+
   //--------------------------------------------------------------------------------------
 
   // Main game loop
@@ -161,6 +166,7 @@ int main(void) {
     BeginDrawing();
     rlImGuiBegin();
 
+
     DrawAndControlGUI();
 
 
@@ -169,7 +175,8 @@ int main(void) {
     /*DrawSizeCursor();*/
 
 
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !io.WantCaptureMouse) {
+
       if (!g_isHoldingLMB) {
         g_isHoldingLMB = true;
         g_LMBHoldingFirstPos = g_lastMousePos;
