@@ -39,41 +39,30 @@ void PixelDraw::FillWithColor(int originX, int originY, Color fillColor){
     return;
 
   m_isFillingCanvas = true;
-  Color colorToFill = m_mainCanvasPixels[originX + originY * m_screenWidth];
+  Color colorToFill = m_tmpCanvasPixels[originX + originY * m_screenWidth];
 
   // Worst case scenario fill memory usage - fill full screen
   std::vector<std::vector<bool>> isVis(m_screenWidth, std::vector<bool>(m_screenHeight, false));
   std::queue<std::pair<int,int>> q;
 
   q.push({originX, originY});
-  isVis[originX][originY] = true;
 
   while(q.size()){
 
     std::pair<int,int> coords = q.front();
-    m_tmpCanvasPixels[coords.first + coords.second * m_screenWidth] = fillColor;
-
     q.pop();
-
-    if(coords.first+1 < m_screenWidth && 
-    m_tmpCanvasPixels[coords.first+1 + coords.second * m_screenWidth] == colorToFill && !isVis[coords.first+1][coords.second]){
-
+    if(!IsOutsideOfScreen(coords.first, coords.second) && !isVis[coords.first][coords.second] 
+        && m_tmpCanvasPixels[coords.first + coords.second * m_screenWidth] == colorToFill){
+      m_tmpCanvasPixels[coords.first + coords.second * m_screenWidth] = fillColor;
+      isVis[coords.first][coords.second] = true;
       q.push({coords.first+1, coords.second});
-      isVis[coords.first+1][coords.second] = true;
-    }
-    if(coords.first-1 >= 0 && m_tmpCanvasPixels[coords.first-1 + coords.second * m_screenWidth] == colorToFill && !isVis[coords.first-1][coords.second]){
       q.push({coords.first-1, coords.second});
-      isVis[coords.first-1][coords.second] = true;
+      q.push({coords.first, coords.second+1});
+      q.push({coords.first, coords.second-1});
     }
 
-    if(coords.second+1 < m_screenHeight && m_tmpCanvasPixels[coords.first + coords.second+1 * m_screenWidth] == colorToFill && !isVis[coords.first][coords.second+1]){
-      q.push({coords.first, coords.second+1});
-      isVis[coords.first][coords.second+1] = true;
-    }
-    if(coords.second-1 >= 0 && m_tmpCanvasPixels[coords.first + coords.second-1 * m_screenWidth] == colorToFill && !isVis[coords.first][coords.second-1]){
-      q.push({coords.first, coords.second-1});
-      isVis[coords.first][coords.second-1] = true;
-    }
+
+
   }
   m_isFillingCanvas = false;
   /*thread::slle*/

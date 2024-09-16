@@ -3,6 +3,8 @@
 #include "raylib.h"
 #include "rlImGui/rlImGui.h"
 #include <cmath>
+#include <chrono>
+#include <thread>
 #include <vector>
 #include <queue>
 #include <cstring>
@@ -19,7 +21,6 @@ bool operator==(Vector2 lhs, Vector2 rhs) {
 
 // temporary global logic
 float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
-Color g_drawingColor = BLACK;
 bool g_isColorPickerPressed;
 
 
@@ -61,7 +62,7 @@ void Draw() {
     //DrawCircle();
     break;
   case Fill:
-    g_pixelDraw.FillWithColor(g_lastMousePos.x, g_lastMousePos.y, g_drawingColor);
+    g_pixelDraw.FillWithColor(g_lastMousePos.x, g_lastMousePos.y, g_pixelDraw.curDrawingColor);
     break;
   }
   UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
@@ -83,7 +84,7 @@ void DrawAndControlGUI() {
       unsigned char g = g_imGuiColorFloat[1] * 255;
       unsigned char b = g_imGuiColorFloat[2] * 255;
       unsigned char a = g_imGuiColorFloat[3] * 255;
-      g_drawingColor = {r, g, b, a};
+      g_pixelDraw.curDrawingColor = {r, g, b, a};
 
       g_isColorPickerPressed = false;
     }
