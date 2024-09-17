@@ -30,8 +30,8 @@ void ClearPixels(Color pixels[], int dataSize) {
   }
 }
 
-const int g_screenWidth = 800;
-const int g_screenHeight = 450;
+const int g_screenWidth = 1280;
+const int g_screenHeight = 800;
 const int g_pixelsSize = g_screenWidth * g_screenHeight;
 Color g_mainCanvasPixels[g_pixelsSize];
 Color g_tmpCanvasPixels[g_pixelsSize];
@@ -60,7 +60,16 @@ void Draw() {
     g_pixelDraw.DrawWithBrush(g_lastMousePos.x, g_lastMousePos.y, WHITE);
     break;
   case Circle:
-    //DrawCircle();
+    // The first mouse position is the center, if user is holding left alt - don't delete intermidiate steps
+    if(IsKeyDown(KEY_LEFT_CONTROL)){
+      g_pixelDraw.DrawCenteredCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
+          g_lastMousePos.x, g_lastMousePos.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
+    }
+    // Center is calculated as the midpoint of two mouse vectors, if user is holding left alt - don't delete intermidiate steps
+    else{
+      g_pixelDraw.DrawAndStretchCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
+          g_lastMousePos.x, g_lastMousePos.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
+    }
     break;
   case Fill:
     g_pixelDraw.FillWithColor(g_lastMousePos.x, g_lastMousePos.y, g_pixelDraw.curDrawingColor);
@@ -71,6 +80,7 @@ void Draw() {
 
 void DrawAndControlGUI() {
   ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
+
   ImGui::SliderInt("Brush Size", &g_pixelDraw.curBrushSize, 1, 20);
 
 
@@ -104,6 +114,14 @@ void DrawAndControlGUI() {
   if (ImGui::Button("Brush")) {
     g_pixelDraw.curTool = Tool::Brush;
   }
+  if(ImGui::CollapsingHeader("Brush Shapes")){
+    if (ImGui::Button("Brush: Circle")) {
+      g_pixelDraw.curBrushShape = BrushShape::CircleBrush;
+    }
+    if (ImGui::Button("Brush: Square")) {
+      g_pixelDraw.curBrushShape = BrushShape::SquareBrush;
+    }
+  }
   if (ImGui::Button("Eraser")) {
     g_pixelDraw.curTool = Tool::Eraser;
   }
@@ -112,12 +130,6 @@ void DrawAndControlGUI() {
   }
   if (ImGui::Button("Fill")) {
     g_pixelDraw.curTool = Tool::Fill;
-  }
-  if (ImGui::Button("Brush: Circle")) {
-    g_pixelDraw.curBrushShape = BrushShape::CircleBrush;
-  }
-  if (ImGui::Button("Brush: Square")) {
-    g_pixelDraw.curBrushShape = BrushShape::SquareBrush;
   }
 
 }
@@ -148,7 +160,13 @@ int main(void) {
 
   rlImGuiSetup(true);
 
+
+  ImGui:ImGui::StyleColorsDark();
+
+
   ImGuiIO& io = ImGui::GetIO();
+
+
 
   //--------------------------------------------------------------------------------------
 

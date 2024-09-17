@@ -1,4 +1,5 @@
 #include "pixel-draw.h"
+#include "imgui/imgui.h"
 
 
 bool operator==(Color lhs, Color rhs){
@@ -17,14 +18,45 @@ PixelDraw::PixelDraw(int screenWidth, int screenHeight, Color tmpCanvasPixels[],
   this->m_mainCanvasPixels = mainCanvasPixels;
 }
 
+void PixelDraw::DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color, bool spawnMultipleInstances){
+  int midX = abs(x1+x0)/2;
+  int midY = abs(y1+y0)/2;
+  if(!spawnMultipleInstances){
+    PixelDraw::ResetTMPBuffer();
+  }
+  // size as distance
+  int size = sqrt(pow(x1-x0, 2) + pow(y1-y0,2));
+  PixelDraw::DrawCircle(midX, midY, size, color);
+}
+
+void PixelDraw::DrawCenteredCircle(int centerX, int centerY, int radiusX, int radiusY, Color color, bool spawnMultipleInstances){
+  
+  int radius = sqrt(pow(radiusX - centerX,2) + pow(radiusY - centerY,2));
+  if(!spawnMultipleInstances){
+    PixelDraw::ResetTMPBuffer();
+  }
+
+  PixelDraw::DrawCircle(centerX, centerY, radius, color);
+
+}
+
+void PixelDraw::DrawFilledCircle(int originX, int originY, int size, Color color){
+  for(int i = 1; i < size; i++){
+    PixelDraw::DrawCircle(originX, originY, i, color);
+  }
+}
+
 
 void PixelDraw::DrawCircle(int originX, int originY, int size, Color color){
-  for(double angle = 0; angle<2*PI; angle+=0.01){
-    for(int radius = 0; radius < size; radius++){
-      int x0 = originX + radius*cos(angle);
-      int y0 = originY + radius*sin(angle);
-      m_tmpCanvasPixels[x0 + y0 * m_screenWidth] = color;  
+  for(double angle = 0; angle<2*PI; angle+=0.001){
+    int x0 = originX + size*cos(angle);
+    int y0 = originY + size*sin(angle);
+
+    if(IsOutsideOfScreen(x0, y0)){
+      continue;
     }
+
+    m_tmpCanvasPixels[x0 + y0 * m_screenWidth] = color;  
   }
 }
 
@@ -101,7 +133,7 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
   }
 
   // resetting the buffer to draw only one line at the time
-  memcpy(m_tmpCanvasPixels, m_mainCanvasPixels, m_pixelsSize * sizeof(Color));
+  PixelDraw::ResetTMPBuffer();
 
   float x = x1 - x0;
   float y = y1 - y0;
@@ -125,6 +157,11 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
     y0 += y;
 
   }
+}
+
+void PixelDraw::ResetTMPBuffer(){
+  // resetting the buffer to draw only one instance at the time
+  memcpy(m_tmpCanvasPixels, m_mainCanvasPixels, m_pixelsSize * sizeof(Color));
 }
 
 

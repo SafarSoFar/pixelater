@@ -34,7 +34,10 @@ class PixelDraw{
     PixelDraw(int screenWidth, int screenHeight, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
     void ClearPixels(Color pixels[], int dataSize);
     void FillWithColor(int originX, int originY, Color fillColor);
+    void DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color, bool spawnMultipleInstances);
+    void DrawCenteredCircle(int centerX, int centerY, int radiusX, int radiusY, Color color, bool spawnMultipleInstances);
     void DrawCircle(int originX, int originY, int size, Color color);
+    void DrawFilledCircle(int originX, int originY, int size, Color color);
     void DrawFilledSquare(int originX, int originY, 
     int size, Color color);
     void DrawWithBrush(int originX, int originY, Color colorToDraw);
@@ -50,6 +53,8 @@ class PixelDraw{
     int m_pixelsSize;
     Color *m_tmpCanvasPixels;
     Color *m_mainCanvasPixels;
+
+    void ResetTMPBuffer();
 
 };
 
