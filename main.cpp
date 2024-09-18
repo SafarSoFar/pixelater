@@ -46,7 +46,24 @@ bool g_canInteractWithCanvas = true;
 Vector2 g_LMBHoldingFirstPos = {0.0f, 0.0f};
 Vector2 g_lastMousePos = {0.0f, 0.0f};
 
+// The only way is to use std::array instead of C-arrays and convert them along the way
 vector<array<Color, g_pixelsSize>> previousCanvasColorPixels;
+
+
+void AddCanvasToUndo(){
+    array<Color,g_pixelsSize> prevArr;
+    
+    // Copying C-array content to std::array 
+    copy(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize, prevArr.begin());
+
+    // delete the limited step undo
+    if(previousCanvasColorPixels.size() >= 30){
+      previousCanvasColorPixels.erase(previousCanvasColorPixels.begin());
+    }
+
+    previousCanvasColorPixels.push_back(prevArr);
+
+}
 
 PixelDraw g_pixelDraw(g_screenWidth, g_screenHeight, g_tmpCanvasPixels, g_mainCanvasPixels);
 
@@ -236,9 +253,7 @@ int main(void) {
     }
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
 
-      array<Color,g_pixelsSize> prevArr;
-      copy(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize, prevArr.begin());
-      previousCanvasColorPixels.push_back(prevArr);
+      AddCanvasToUndo();
 
       memcpy(g_mainCanvasPixels, g_tmpCanvasPixels, g_pixelsSize * sizeof(Color));
 
@@ -246,8 +261,6 @@ int main(void) {
       UpdateTexture(g_mainCanvasTexture, &g_mainCanvasPixels);
 
 
-      /*array<Color, g_pixelsSize> prev;*/
-      /*memcpy(&prev, &g_mainCanvasPixels, g_pixelsSize * sizeof(Color));*/
       
     }
 
