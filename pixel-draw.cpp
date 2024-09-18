@@ -26,7 +26,9 @@ void PixelDraw::DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color
   }
   // size as distance
   int size = sqrt(pow(x1-x0, 2) + pow(y1-y0,2));
-  PixelDraw::DrawCircle(midX, midY, size, color);
+  for(int i = size; i <= size+curToolSize; i++){
+    PixelDraw::DrawCircle(midX, midY, i, color);
+  }
 }
 
 void PixelDraw::DrawCenteredCircle(int centerX, int centerY, int radiusX, int radiusY, Color color, bool spawnMultipleInstances){
@@ -36,21 +38,23 @@ void PixelDraw::DrawCenteredCircle(int centerX, int centerY, int radiusX, int ra
     PixelDraw::ResetTMPBuffer();
   }
 
-  PixelDraw::DrawCircle(centerX, centerY, radius, color);
+  for(int i = radius; i <= radius+curToolSize; i++){
+    PixelDraw::DrawCircle(centerX, centerY, i, color);
+  }
 
 }
 
-void PixelDraw::DrawFilledCircle(int originX, int originY, int size, Color color){
-  for(int i = 1; i < size; i++){
+void PixelDraw::DrawFilledCircle(int originX, int originY, int radius, Color color){
+  for(int i = 1; i < radius; i++){
     PixelDraw::DrawCircle(originX, originY, i, color);
   }
 }
 
 
-void PixelDraw::DrawCircle(int originX, int originY, int size, Color color){
+void PixelDraw::DrawCircle(int originX, int originY, int radius, Color color){
   for(double angle = 0; angle<2*PI; angle+=0.001){
-    int x0 = originX + size*cos(angle);
-    int y0 = originY + size*sin(angle);
+    int x0 = originX + radius*cos(angle);
+    int y0 = originY + radius*sin(angle);
 
     if(IsOutsideOfScreen(x0, y0)){
       continue;
@@ -116,10 +120,10 @@ void PixelDraw::DrawFilledSquare(int originX, int originY, int size, Color color
 void PixelDraw::DrawWithBrush(int originX, int originY, Color colorToDraw) {
 
   if(curBrushShape == BrushShape::SquareBrush){
-    DrawFilledSquare(originX, originY, curBrushSize, colorToDraw);
+    DrawFilledSquare(originX, originY, curToolSize, colorToDraw);
   }
   else{
-    DrawCircle(originX, originY, curBrushSize, colorToDraw);
+    DrawCircle(originX, originY, curToolSize, colorToDraw);
   }
 
 }
@@ -145,8 +149,8 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
 
   for (int i = 0; i < max; i++) {
 
-    for(int width = x0 - curBrushSize; width <= x0 + curBrushSize; width++){
-      for(int height = y0 - curBrushSize; height <= y0 + curBrushSize; height++){
+    for(int width = x0 - curToolSize; width <= x0 + curToolSize; width++){
+      for(int height = y0 - curToolSize; height <= y0 + curToolSize; height++){
         if(!IsOutsideOfScreen(width, height)){
           m_tmpCanvasPixels[(int)width + (int)height * m_screenWidth] = curDrawingColor;
         }

@@ -119,7 +119,7 @@ void UndoControl(){
 void DrawAndControlGUI() {
   ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
 
-  ImGui::SliderInt("Brush Size", &g_pixelDraw.curBrushSize, 1, 20);
+  ImGui::SliderInt("Brush Size", &g_pixelDraw.curToolSize, 1, 20);
 
 
   // Color choosing for drawing

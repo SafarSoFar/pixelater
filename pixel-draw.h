@@ -28,7 +28,7 @@ class PixelDraw{
   public: 
     Tool curTool;
     BrushShape curBrushShape;
-    int curBrushSize = 1;
+    int curToolSize = 1;
     Color curDrawingColor = BLACK;
 
     PixelDraw(int screenWidth, int screenHeight, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
@@ -36,8 +36,8 @@ class PixelDraw{
     void FillWithColor(int originX, int originY, Color fillColor);
     void DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color, bool spawnMultipleInstances);
     void DrawCenteredCircle(int centerX, int centerY, int radiusX, int radiusY, Color color, bool spawnMultipleInstances);
-    void DrawCircle(int originX, int originY, int size, Color color);
-    void DrawFilledCircle(int originX, int originY, int size, Color color);
+    void DrawCircle(int originX, int originY, int radius, Color color);
+    void DrawFilledCircle(int originX, int originY, int radius, Color color);
     void DrawFilledSquare(int originX, int originY, 
     int size, Color color);
     void DrawWithBrush(int originX, int originY, Color colorToDraw);
