@@ -2,6 +2,8 @@
 #include "pixel-draw.h"
 #include "raylib.h"
 #include "rlImGui/rlImGui.h"
+#include <algorithm>
+#include <stack>
 #include <memory>
 #include <array>
 #include <cmath>
@@ -44,8 +46,7 @@ bool g_canInteractWithCanvas = true;
 Vector2 g_LMBHoldingFirstPos = {0.0f, 0.0f};
 Vector2 g_lastMousePos = {0.0f, 0.0f};
 
-/*vector<array<Color, g_pixelsSize>> previousCanvasColors;*/
-vector<Color*> previousCanvasColorPixels;
+vector<array<Color, g_pixelsSize>> previousCanvasColorPixels;
 
 PixelDraw g_pixelDraw(g_screenWidth, g_screenHeight, g_tmpCanvasPixels, g_mainCanvasPixels);
 
@@ -85,9 +86,11 @@ void UndoControl(){
   if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z) && previousCanvasColorPixels.size()){
 
 
-    Color* k = previousCanvasColorPixels.back();
+    auto prev = previousCanvasColorPixels.back();
+    previousCanvasColorPixels.pop_back();
+    /*previousCanvasColorPixels.pop();*/
 
-    memcpy(g_mainCanvasPixels, k, g_pixelsSize * sizeof(Color));
+    memcpy(g_mainCanvasPixels, &prev, g_pixelsSize * sizeof(Color));
 
     memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_pixelsSize * sizeof(Color));
 
@@ -233,9 +236,9 @@ int main(void) {
     }
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
 
-      Color prev[g_pixelsSize];
-      memcpy(prev, g_mainCanvasPixels, g_pixelsSize * sizeof(Color));
-      previousCanvasColorPixels.push_back(prev);
+      array<Color,g_pixelsSize> prevArr;
+      copy(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize, prevArr.begin());
+      previousCanvasColorPixels.push_back(prevArr);
 
       memcpy(g_mainCanvasPixels, g_tmpCanvasPixels, g_pixelsSize * sizeof(Color));
 
