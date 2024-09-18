@@ -2,11 +2,10 @@
 #include "pixel-draw.h"
 #include "raylib.h"
 #include "rlImGui/rlImGui.h"
+#include <memory>
+#include <array>
 #include <cmath>
-#include <chrono>
-#include <thread>
 #include <vector>
-#include <queue>
 #include <cstring>
 #include <iostream>
 #include <iterator>
@@ -22,6 +21,7 @@ bool operator==(Vector2 lhs, Vector2 rhs) {
 // temporary global logic
 float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
 bool g_isColorPickerPressed;
+
 
 
 void ClearPixels(Color pixels[], int dataSize) {
@@ -43,6 +43,9 @@ bool g_isHoldingLMB;
 bool g_canInteractWithCanvas = true;
 Vector2 g_LMBHoldingFirstPos = {0.0f, 0.0f};
 Vector2 g_lastMousePos = {0.0f, 0.0f};
+
+/*vector<array<Color, g_pixelsSize>> previousCanvasColors;*/
+vector<Color*> previousCanvasColorPixels;
 
 PixelDraw g_pixelDraw(g_screenWidth, g_screenHeight, g_tmpCanvasPixels, g_mainCanvasPixels);
 
@@ -76,6 +79,21 @@ void Draw() {
     break;
   }
   UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);
+}
+
+void UndoControl(){
+  if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z) && previousCanvasColorPixels.size()){
+
+
+    Color* k = previousCanvasColorPixels.back();
+
+    memcpy(g_mainCanvasPixels, k, g_pixelsSize * sizeof(Color));
+
+    memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_pixelsSize * sizeof(Color));
+
+    UpdateTexture(g_mainCanvasTexture, &g_mainCanvasPixels);
+    /*UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);*/
+  }
 }
 
 void DrawAndControlGUI() {
@@ -186,9 +204,10 @@ int main(void) {
 
 
     DrawAndControlGUI();
-
-
+    
     g_lastMousePos = GetMousePosition();
+
+    UndoControl();
 
     /*DrawSizeCursor();*/
 
@@ -212,12 +231,21 @@ int main(void) {
       DrawTexture(g_mainCanvasTexture, 0, 0, WHITE);
 
     }
-    
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
-      /*g_mainCanvasPixels = g_tmpCanvasPixels;*/
+
+      Color prev[g_pixelsSize];
+      memcpy(prev, g_mainCanvasPixels, g_pixelsSize * sizeof(Color));
+      previousCanvasColorPixels.push_back(prev);
+
       memcpy(g_mainCanvasPixels, g_tmpCanvasPixels, g_pixelsSize * sizeof(Color));
-      //g_mainCanvasPixels = g_tmpCanvasPixels;
+
+      
       UpdateTexture(g_mainCanvasTexture, &g_mainCanvasPixels);
+
+
+      /*array<Color, g_pixelsSize> prev;*/
+      /*memcpy(&prev, &g_mainCanvasPixels, g_pixelsSize * sizeof(Color));*/
+      
     }
 
     rlImGuiEnd();
