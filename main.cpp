@@ -1,4 +1,5 @@
 #include "imgui/imgui.h"
+#include "rlImGui/imgui_impl_raylib.h"
 #include "pixel-draw.h"
 #include "raylib.h"
 #include "rlImGui/rlImGui.h"
@@ -117,9 +118,11 @@ void UndoControl(){
 }
 
 void DrawAndControlGUI() {
+  ImGui::Begin("Tool panel");
+
   ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
 
-  ImGui::SliderInt("Brush Size", &g_pixelDraw.curToolSize, 1, 20);
+  ImGui::SliderInt("Tool Size", &g_pixelDraw.curToolSize, 1, 20);
 
 
   // Color choosing for drawing
@@ -169,7 +172,7 @@ void DrawAndControlGUI() {
   if (ImGui::Button("Fill")) {
     g_pixelDraw.curTool = Tool::Fill;
   }
-
+  ImGui::End();
 }
 
 
@@ -185,7 +188,18 @@ int main(void) {
   // Initialization
   //--------------------------------------------------------------------------------------
 
+  /*SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI);*/
   InitWindow(g_screenWidth, g_screenHeight, "Pixel Editor");
+
+  ImGui::CreateContext();
+  ImGuiIO& io = ImGui::GetIO(); (void)io;
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+  ImGui::StyleColorsDark();
+
+  ImGui_ImplRaylib_Init();
+  io.Fonts->AddFontDefault();
+  Imgui_ImplRaylib_BuildFontAtlas();
 
   ClearPixels(g_mainCanvasPixels, g_pixelsSize);
 
@@ -196,13 +210,8 @@ int main(void) {
   g_tmpCanvasTexture = LoadTextureFromImage(g_image);
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
 
-  rlImGuiSetup(true);
 
 
-  ImGui:ImGui::StyleColorsDark();
-
-
-  ImGuiIO& io = ImGui::GetIO();
 
 
 
@@ -219,17 +228,24 @@ int main(void) {
     // Draw
     //----------------------------------------------------------------------------------
     ClearBackground(WHITE);
-    BeginDrawing();
-    rlImGuiBegin();
 
-
+    ImGui_ImplRaylib_ProcessEvents();
+    ImGui_ImplRaylib_NewFrame();
+    ImGui::NewFrame();
     DrawAndControlGUI();
+
+    ImGui::Render();
+    BeginDrawing();
+
+
     
     g_lastMousePos = GetMousePosition();
 
     UndoControl();
 
     /*DrawSizeCursor();*/
+
+    
 
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !io.WantCaptureMouse) {
@@ -264,14 +280,15 @@ int main(void) {
       
     }
 
-    rlImGuiEnd();
+    ImGui_ImplRaylib_RenderDrawData(ImGui::GetDrawData());
     EndDrawing();
     //----------------------------------------------------------------------------------
   }
 
   // De-Initialization
   //--------------------------------------------------------------------------------------
-  rlImGuiShutdown();
+  ImGui_ImplRaylib_Shutdown();
+  ImGui::DestroyContext();
   CloseWindow(); // Close window and OpenGL context
   //--------------------------------------------------------------------------------------
 
