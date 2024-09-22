@@ -6,6 +6,11 @@
 #include <vector>
 #include <queue>
 
+
+enum CanvasPixelType{
+  Main,
+  Tmp,
+};
   
 enum Tool {
   Brush,
@@ -32,7 +37,7 @@ class PixelDraw{
     Color curDrawingColor = BLACK;
 
     PixelDraw(int screenWidth, int screenHeight, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
-    void ClearPixels(Color pixels[], int dataSize);
+    void ClearPixels(); 
     void FillWithColor(int originX, int originY, Color fillColor);
     void DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color, bool spawnMultipleInstances);
     void DrawCenteredCircle(int centerX, int centerY, int radiusX, int radiusY, Color color, bool spawnMultipleInstances);

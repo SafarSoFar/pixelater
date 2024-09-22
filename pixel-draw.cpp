@@ -64,9 +64,12 @@ void PixelDraw::DrawCircle(int originX, int originY, int radius, Color color){
   }
 }
 
-void PixelDraw::ClearPixels(Color pixels[], int dataSize) {
-  for (int i = 0; i < dataSize; i++) {
-    pixels[i] = WHITE;
+void PixelDraw::ClearPixels() {
+  for (int i = 0; i < m_screenWidth; i++) {
+    for(int j = 0; j < m_screenHeight; j++){
+        m_mainCanvasPixels[i+j*m_screenWidth] = WHITE;
+        m_tmpCanvasPixels[i+j*m_screenWidth] = WHITE;
+    }
   }
 }
 

@@ -27,11 +27,6 @@ bool g_isColorPickerPressed;
 
 
 
-void ClearPixels(Color pixels[], int dataSize) {
-  for (int i = 0; i < dataSize; i++) {
-    pixels[i] = WHITE;
-  }
-}
 
 int g_screenWidth = 1280;
 int g_screenHeight = 800;
@@ -48,23 +43,25 @@ Vector2 g_LMBHoldingFirstPos = {0.0f, 0.0f};
 Vector2 g_lastMousePos = {0.0f, 0.0f};
 
 // The only way is to use std::array instead of C-arrays and convert them along the way
-/*vector<array<Color, g_pixelsSize>> previousCanvasColorPixels;*/
+vector<vector<Color>> previousCanvasColorPixels;
 
 
-/*void AddCanvasToUndo(){*/
-/*    array<Color,g_pixelsSize> prevArr;*/
-/**/
-/*    // Copying C-array content to std::array */
-/*    copy(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize, prevArr.begin());*/
-/**/
-/*    // delete the limited step undo*/
-/*    if(previousCanvasColorPixels.size() >= 30){*/
-/*      previousCanvasColorPixels.erase(previousCanvasColorPixels.begin());*/
-/*    }*/
-/**/
-/*    previousCanvasColorPixels.push_back(prevArr);*/
-/**/
-/*}*/
+void AddCanvasToUndo(){
+    vector<Color> prevArr(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize);
+
+    // Copying C-array content to std::array 
+    /*copy(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize, prevArr.begin());*/
+    /*memcpy(prevArr, &g_mainCanvasPixels, g_pixelsSize * sizeof(Color));*/
+
+    // delete the limited step undo
+    if(previousCanvasColorPixels.size() >= 30){
+      previousCanvasColorPixels.erase(previousCanvasColorPixels.begin());
+    }
+
+    previousCanvasColorPixels.push_back(prevArr);
+
+}
+
 
 PixelDraw g_pixelDraw(g_screenWidth, g_screenHeight, g_tmpCanvasPixels, g_mainCanvasPixels);
 
@@ -100,22 +97,21 @@ void Draw() {
   UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
 }
 
-/*void UndoControl(){*/
-/*  if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z) && previousCanvasColorPixels.size()){*/
-/**/
-/**/
-/*    auto prev = previousCanvasColorPixels.back();*/
-/*    previousCanvasColorPixels.pop_back();*/
-/*    previousCanvasColorPixels.pop();*/
-/**/
-/*    memcpy(g_mainCanvasPixels, &prev, g_pixelsSize * sizeof(Color));*/
-/**/
-/*    memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_pixelsSize * sizeof(Color));*/
-/**/
-/*    UpdateTexture(g_mainCanvasTexture, &g_mainCanvasPixels);*/
-/*    UpdateTexture(g_tmpCanvasTexture, &g_tmpCanvasPixels);*/
-/*  }*/
-/*}*/
+void UndoControl(){
+  if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z) && previousCanvasColorPixels.size()){
+
+    auto prev = previousCanvasColorPixels.back();
+    previousCanvasColorPixels.pop_back();
+
+    memcpy(g_mainCanvasPixels, prev.data(), g_pixelsSize * sizeof(Color));
+    /*memcpy(g_mainCanvasPixels, prev, g_pixelsSize * sizeof(Color));*/
+
+    memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_pixelsSize * sizeof(Color));
+
+    UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
+    UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
+  }
+}
 
 void DrawAndControlGUI() {
   ImGui::Begin("Tool panel");
@@ -144,8 +140,7 @@ void DrawAndControlGUI() {
   }
 
   if (ImGui::Button("Clear Canvas")) {
-    ClearPixels(g_mainCanvasPixels, g_pixelsSize);
-    ClearPixels(g_tmpCanvasPixels, g_pixelsSize);
+    g_pixelDraw.ClearPixels();
     UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
     UpdateTexture(g_tmpCanvasTexture, g_mainCanvasPixels);
   }
@@ -201,7 +196,7 @@ int main(void) {
   io.Fonts->AddFontDefault();
   Imgui_ImplRaylib_BuildFontAtlas();
 
-  ClearPixels(g_mainCanvasPixels, g_pixelsSize);
+  g_pixelDraw.ClearPixels();
 
   Image g_image = {g_mainCanvasPixels, g_screenWidth, g_screenHeight, 1,
                    PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
@@ -241,7 +236,7 @@ int main(void) {
     
     g_lastMousePos = GetMousePosition();
 
-    /*UndoControl();*/
+    UndoControl();
 
     /*DrawSizeCursor();*/
 
@@ -268,7 +263,7 @@ int main(void) {
     }
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
 
-      /*AddCanvasToUndo();*/
+      AddCanvasToUndo();
 
       memcpy(g_mainCanvasPixels, g_tmpCanvasPixels, g_pixelsSize * sizeof(Color));
 
