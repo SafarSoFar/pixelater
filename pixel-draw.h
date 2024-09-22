@@ -36,7 +36,7 @@ class PixelDraw{
     int curToolSize = 1;
     Color curDrawingColor = BLACK;
 
-    PixelDraw(int screenWidth, int screenHeight, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
+    PixelDraw(int canvasWidth, int canvasHeight, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
     void ClearPixels(); 
     void FillWithColor(int originX, int originY, Color fillColor);
     void DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color, bool spawnMultipleInstances);
@@ -53,8 +53,8 @@ class PixelDraw{
 
   private:
     bool m_isFillingCanvas = false;
-    int m_screenWidth;
-    int m_screenHeight;
+    int m_canvasWidth;
+    int m_canvasHeight;
     int m_pixelsSize;
     Color *m_tmpCanvasPixels;
     Color *m_mainCanvasPixels;

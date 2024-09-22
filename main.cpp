@@ -28,9 +28,11 @@ bool g_isColorPickerPressed;
 
 
 
-int g_screenWidth = 1280;
+int g_screenWidth = 900;
 int g_screenHeight = 800;
-int g_pixelsSize = g_screenWidth * g_screenHeight;
+int g_canvasWidth = 600;
+int g_canvasHeight = 600;
+int g_pixelsSize = g_canvasWidth * g_canvasHeight;
 Color *g_mainCanvasPixels = new Color[g_pixelsSize];
 Color *g_tmpCanvasPixels = new Color[g_pixelsSize];
 
@@ -63,7 +65,7 @@ void AddCanvasToUndo(){
 }
 
 
-PixelDraw g_pixelDraw(g_screenWidth, g_screenHeight, g_tmpCanvasPixels, g_mainCanvasPixels);
+PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_tmpCanvasPixels, g_mainCanvasPixels);
 
 void Draw() {
   switch (g_pixelDraw.curTool) {  
@@ -111,6 +113,13 @@ void UndoControl(){
     UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
     UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
   }
+}
+
+
+void GetMousePosRelativeToCanvas(int canvasPosX, int canvasPosY){
+  Vector2 toWindowPos = GetMousePosition();
+  g_lastMousePos.x = toWindowPos.x-canvasPosX;
+  g_lastMousePos.y = toWindowPos.y-canvasPosY;
 }
 
 void DrawAndControlGUI() {
@@ -186,6 +195,9 @@ int main(void) {
   /*SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI);*/
   InitWindow(g_screenWidth, g_screenHeight, "Pixel Editor");
 
+  int canvasPosX = g_screenWidth/2-g_canvasWidth/2;
+  int canvasPosY = g_screenHeight/2-g_canvasHeight/2;
+
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO(); (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -198,7 +210,7 @@ int main(void) {
 
   g_pixelDraw.ClearPixels();
 
-  Image g_image = {g_mainCanvasPixels, g_screenWidth, g_screenHeight, 1,
+  Image g_image = {g_mainCanvasPixels, g_canvasWidth, g_canvasHeight, 1,
                    PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
 
   g_mainCanvasTexture = LoadTextureFromImage(g_image);
@@ -234,7 +246,7 @@ int main(void) {
 
 
     
-    g_lastMousePos = GetMousePosition();
+    GetMousePosRelativeToCanvas(canvasPosX, canvasPosY);
 
     UndoControl();
 
@@ -249,7 +261,7 @@ int main(void) {
         g_LMBHoldingFirstPos = g_lastMousePos;
       }
 
-      DrawTexture(g_tmpCanvasTexture, 0,0,WHITE);
+      DrawTexture(g_tmpCanvasTexture, canvasPosX,canvasPosY,WHITE);
       Draw();
 
     } else {
@@ -258,7 +270,7 @@ int main(void) {
         g_isHoldingLMB = false;
       }
 
-      DrawTexture(g_mainCanvasTexture, 0, 0, WHITE);
+      DrawTexture(g_mainCanvasTexture, canvasPosX, canvasPosY, WHITE);
 
     }
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){

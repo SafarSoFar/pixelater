@@ -7,12 +7,12 @@ bool operator==(Color lhs, Color rhs){
 }
 
 bool PixelDraw::IsOutsideOfScreen(int x, int y){
-  return x < 0 || y < 0 || x >= m_screenWidth || y >= m_screenHeight; 
+  return x < 0 || y < 0 || x >= m_canvasWidth || y >= m_canvasHeight; 
 }
 
 PixelDraw::PixelDraw(int screenWidth, int screenHeight, Color tmpCanvasPixels[], Color mainCanvasPixels[]){
-  this->m_screenWidth = screenWidth;
-  this->m_screenHeight = screenHeight;
+  this->m_canvasWidth = screenWidth;
+  this->m_canvasHeight = screenHeight;
   this->m_pixelsSize = screenWidth * screenHeight;
   this->m_tmpCanvasPixels = tmpCanvasPixels;
   this->m_mainCanvasPixels = mainCanvasPixels;
@@ -60,15 +60,21 @@ void PixelDraw::DrawCircle(int originX, int originY, int radius, Color color){
       continue;
     }
 
-    m_tmpCanvasPixels[x0 + y0 * m_screenWidth] = color;  
+    m_tmpCanvasPixels[x0 + y0 * m_canvasWidth] = color;  
   }
 }
 
 void PixelDraw::ClearPixels() {
-  for (int i = 0; i < m_screenWidth; i++) {
-    for(int j = 0; j < m_screenHeight; j++){
-        m_mainCanvasPixels[i+j*m_screenWidth] = WHITE;
-        m_tmpCanvasPixels[i+j*m_screenWidth] = WHITE;
+  for (int i = 0; i < m_canvasWidth; i++) {
+    for(int j = 0; j < m_canvasHeight; j++){
+        m_mainCanvasPixels[i+j*m_canvasWidth] = WHITE;
+        m_tmpCanvasPixels[i+j*m_canvasWidth] = WHITE;
+    }
+  }
+  for(int i = 0; i < m_canvasWidth; i+=2){
+    for(int j = 0; j < m_canvasHeight; j+=2){
+      m_mainCanvasPixels[i+j*m_canvasWidth] = GRAY;
+      m_tmpCanvasPixels[i+j*m_canvasWidth] = GRAY;
     }
   }
 }
@@ -78,10 +84,10 @@ void PixelDraw::FillWithColor(int originX, int originY, Color fillColor){
     return;
 
   m_isFillingCanvas = true;
-  Color colorToFill = m_tmpCanvasPixels[originX + originY * m_screenWidth];
+  Color colorToFill = m_tmpCanvasPixels[originX + originY * m_canvasWidth];
 
   // Worst case scenario fill memory usage - fill full screen
-  std::vector<std::vector<bool>> isVis(m_screenWidth, std::vector<bool>(m_screenHeight, false));
+  std::vector<std::vector<bool>> isVis(m_canvasWidth, std::vector<bool>(m_canvasHeight, false));
   std::queue<std::pair<int,int>> q;
 
   q.push({originX, originY});
@@ -91,8 +97,8 @@ void PixelDraw::FillWithColor(int originX, int originY, Color fillColor){
     std::pair<int,int> coords = q.front();
     q.pop();
     if(!IsOutsideOfScreen(coords.first, coords.second) && !isVis[coords.first][coords.second] 
-        && m_tmpCanvasPixels[coords.first + coords.second * m_screenWidth] == colorToFill){
-      m_tmpCanvasPixels[coords.first + coords.second * m_screenWidth] = fillColor;
+        && m_tmpCanvasPixels[coords.first + coords.second * m_canvasWidth] == colorToFill){
+      m_tmpCanvasPixels[coords.first + coords.second * m_canvasWidth] = fillColor;
       isVis[coords.first][coords.second] = true;
       q.push({coords.first+1, coords.second});
       q.push({coords.first-1, coords.second});
@@ -113,7 +119,7 @@ void PixelDraw::DrawFilledSquare(int originX, int originY, int size, Color color
       for (int j = originY - size;
           j <= originY + size; j++) {
         if (!IsOutsideOfScreen(i, j)){
-          m_tmpCanvasPixels[i + j * m_screenWidth] = color;
+          m_tmpCanvasPixels[i + j * m_canvasWidth] = color;
         }
       }
     }
@@ -155,7 +161,7 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
     for(int width = x0 - curToolSize; width <= x0 + curToolSize; width++){
       for(int height = y0 - curToolSize; height <= y0 + curToolSize; height++){
         if(!IsOutsideOfScreen(width, height)){
-          m_tmpCanvasPixels[(int)width + (int)height * m_screenWidth] = curDrawingColor;
+          m_tmpCanvasPixels[(int)width + (int)height * m_canvasWidth] = curDrawingColor;
         }
       }
     }
