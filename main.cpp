@@ -3,15 +3,10 @@
 #include "pixel-draw.h"
 #include "raylib.h"
 #include "rlImGui/rlImGui.h"
-#include <algorithm>
-#include <stack>
-#include <memory>
-#include <array>
 #include <cmath>
 #include <vector>
 #include <cstring>
-#include <iostream>
-#include <iterator>
+#include "IconsFontAwesome5.h"
 #include <raylib.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -19,7 +14,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
-using namespace std;
+using std::vector;
 
 bool operator==(Vector2 lhs, Vector2 rhs) {
   return lhs.x == rhs.x && lhs.y == rhs.y;
@@ -97,7 +92,7 @@ void Draw() {
     g_pixelDraw.DrawWithBrush(g_lastMousePos.x, g_lastMousePos.y, WHITE);
     break;
   case Circle:
-    // The first mouse position is the center, if user is holding left alt - don't delete intermidiate steps
+    // The first mouse position is the center, if user is holding left alt - don't delete intermidiate stepsinclude "IconsFontAwesome5.h"
     if(IsKeyDown(KEY_LEFT_CONTROL)){
       g_pixelDraw.DrawCenteredCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
           g_lastMousePos.x, g_lastMousePos.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
@@ -171,14 +166,14 @@ void DrawAndControlGUI() {
 
   if(g_isSaveWindowOpen){
     ImGui::Begin("File",&g_isSaveWindowOpen);
-      // requires initialization, used {}
 
-      ImGui::InputText("Enter the file name",  g_outputFileName, MAX_OUTPUT_FILE_SIZE);
+    ImGui::InputText("Enter the file name",  g_outputFileName, MAX_OUTPUT_FILE_SIZE);
 
-      if(ImGui::Button("Save to PNG")){
-        SavePixelArt(g_outputFileName);
-      }
-      ImGui::End();
+    if(ImGui::Button("Save to PNG")){
+      SavePixelArt(g_outputFileName);
+    }
+
+    ImGui::End();
   }
   
 
@@ -209,7 +204,7 @@ void DrawAndControlGUI() {
   if (ImGui::Button("Line")) {
     g_pixelDraw.curTool = Tool::Line;
   }
-  if (ImGui::Button("Brush")) {
+  if (ImGui::Button(ICON_FA_PAINT_BRUSH "Brush")) {
     g_pixelDraw.curTool = Tool::Brush;
   }
   if(ImGui::CollapsingHeader("Brush Shapes")){
@@ -253,6 +248,17 @@ int main(void) {
 
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO(); (void)io;
+  io.Fonts->AddFontDefault();
+  float baseFontSize = 13.0f;
+  float iconFontSize = baseFontSize * 2.0f / 3.0f;
+
+  static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+  ImFontConfig icons_config; 
+  icons_config.MergeMode = true; 
+  icons_config.PixelSnapH = true; 
+  icons_config.GlyphMinAdvanceX = iconFontSize;
+  io.Fonts->AddFontFromFileTTF( FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges );
+
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
   ImGui::StyleColorsDark();
