@@ -31,7 +31,8 @@ float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
 bool g_isColorPickerPressed;
 
 
-
+#define MAX_OUTPUT_FILE_SIZE 10
+char g_outputFileName[MAX_OUTPUT_FILE_SIZE];
 
 int g_screenWidth = 900;
 int g_screenHeight = 800;
@@ -45,8 +46,12 @@ Color *g_tmpCanvasPixels = new Color[g_canvasPixelsSize];
 Texture2D g_mainCanvasTexture;
 Texture2D g_tmpCanvasTexture;
 Texture2D g_transparentTexture;
+
 bool g_isHoldingLMB;
 bool g_canInteractWithCanvas = true;
+bool g_isSaveWindowOpen = false;
+
+
 Vector2 g_LMBHoldingFirstPos = {0.0f, 0.0f};
 Vector2 g_lastMousePos = {0.0f, 0.0f};
 
@@ -54,8 +59,8 @@ Vector2 g_lastMousePos = {0.0f, 0.0f};
 vector<vector<Color>> previousCanvasColorPixels;
 
 
-void SavePixelArt(){
-  stbi_write_png("test.png", g_canvasWidth,  g_canvasHeight, 4,  g_mainCanvasPixels, g_canvasWidth*4);
+void SavePixelArt(char fileName[10]){
+  stbi_write_png(fileName, g_canvasWidth,  g_canvasHeight, 4,  g_mainCanvasPixels, g_canvasWidth*4);
 }
 
 
@@ -160,9 +165,22 @@ void DrawAndControlGUI() {
   ImGui::SliderInt("Tool Size", &g_pixelDraw.curToolSize, 1, 20);
 
 
-  if(ImGui::Button("Save to PNG")){
-    SavePixelArt();
+  if(ImGui::Button("File")){
+    g_isSaveWindowOpen = true;
   }
+
+  if(g_isSaveWindowOpen){
+    ImGui::Begin("File",&g_isSaveWindowOpen);
+      // requires initialization, used {}
+
+      ImGui::InputText("Enter the file name",  g_outputFileName, MAX_OUTPUT_FILE_SIZE);
+
+      if(ImGui::Button("Save to PNG")){
+        SavePixelArt(g_outputFileName);
+      }
+      ImGui::End();
+  }
+  
 
 
   // Color choosing for drawing
