@@ -1,4 +1,5 @@
 #include "imgui/imgui.h"
+
 #include "rlImGui/imgui_impl_raylib.h"
 #include "pixel-draw.h"
 #include "raylib.h"
@@ -204,7 +205,7 @@ void DrawAndControlGUI() {
   if (ImGui::Button("Line")) {
     g_pixelDraw.curTool = Tool::Line;
   }
-  if (ImGui::Button(ICON_FA_PAINT_BRUSH "Brush")) {
+  if (ImGui::Button(ICON_FA_PAINT_BRUSH "  Brush")) {
     g_pixelDraw.curTool = Tool::Brush;
   }
   if(ImGui::CollapsingHeader("Brush Shapes")){
@@ -249,22 +250,20 @@ int main(void) {
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO(); (void)io;
   io.Fonts->AddFontDefault();
-  float baseFontSize = 13.0f;
+  float baseFontSize = 25.0f;
   float iconFontSize = baseFontSize * 2.0f / 3.0f;
-
   static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
   ImFontConfig icons_config; 
   icons_config.MergeMode = true; 
   icons_config.PixelSnapH = true; 
   icons_config.GlyphMinAdvanceX = iconFontSize;
-  io.Fonts->AddFontFromFileTTF( FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges );
+  io.Fonts->AddFontFromFileTTF( "fonts/" FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges );
 
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
   ImGui::StyleColorsDark();
 
   ImGui_ImplRaylib_Init();
-  io.Fonts->AddFontDefault();
   Imgui_ImplRaylib_BuildFontAtlas();
 
   g_pixelDraw.ClearPixels();
