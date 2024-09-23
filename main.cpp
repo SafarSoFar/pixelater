@@ -14,6 +14,11 @@
 #include <iterator>
 #include <raylib.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb/stb_image_write.h"
+
 using namespace std;
 
 bool operator==(Vector2 lhs, Vector2 rhs) {
@@ -32,13 +37,14 @@ int g_screenWidth = 900;
 int g_screenHeight = 800;
 int g_canvasWidth = 600;
 int g_canvasHeight = 600;
-int g_pixelsSize = g_canvasWidth * g_canvasHeight;
-Color *g_mainCanvasPixels = new Color[g_pixelsSize];
-Color *g_tmpCanvasPixels = new Color[g_pixelsSize];
+int g_canvasPixelsSize = g_canvasWidth * g_canvasHeight;
+Color *g_mainCanvasPixels = new Color[g_canvasPixelsSize];
+Color *g_tmpCanvasPixels = new Color[g_canvasPixelsSize];
 
 // using texture like global increase performance.
 Texture2D g_mainCanvasTexture;
 Texture2D g_tmpCanvasTexture;
+Texture2D g_transparentTexture;
 bool g_isHoldingLMB;
 bool g_canInteractWithCanvas = true;
 Vector2 g_LMBHoldingFirstPos = {0.0f, 0.0f};
@@ -48,8 +54,13 @@ Vector2 g_lastMousePos = {0.0f, 0.0f};
 vector<vector<Color>> previousCanvasColorPixels;
 
 
+void SavePixelArt(){
+  stbi_write_png("test.png", g_canvasWidth,  g_canvasHeight, 4,  g_mainCanvasPixels, g_canvasWidth*4);
+}
+
+
 void AddCanvasToUndo(){
-    vector<Color> prevArr(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize);
+    vector<Color> prevArr(g_mainCanvasPixels, g_mainCanvasPixels+g_canvasPixelsSize);
 
     // Copying C-array content to std::array 
     /*copy(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize, prevArr.begin());*/
@@ -105,14 +116,33 @@ void UndoControl(){
     auto prev = previousCanvasColorPixels.back();
     previousCanvasColorPixels.pop_back();
 
-    memcpy(g_mainCanvasPixels, prev.data(), g_pixelsSize * sizeof(Color));
+    memcpy(g_mainCanvasPixels, prev.data(), g_canvasPixelsSize * sizeof(Color));
     /*memcpy(g_mainCanvasPixels, prev, g_pixelsSize * sizeof(Color));*/
 
-    memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_pixelsSize * sizeof(Color));
+    memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));
 
     UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
     UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
   }
+}
+
+void SetTransparentTexture(){
+  Color* transparentTexturePixels = new Color[g_canvasPixelsSize]; 
+  int blockSize = 16;
+  int count = 0;
+  bool isGray = true;
+  for(int i = 0; i < g_canvasWidth; i++){
+    for(int j = 0; j < g_canvasHeight; j++){
+      if(count >= blockSize){
+        isGray = !isGray;
+        count = 0;
+      }
+      transparentTexturePixels[i+j*g_canvasWidth] = isGray ? GRAY : WHITE;
+      count++;
+    }
+  }
+  UpdateTexture(g_transparentTexture,transparentTexturePixels);
+
 }
 
 
@@ -128,6 +158,11 @@ void DrawAndControlGUI() {
   ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
 
   ImGui::SliderInt("Tool Size", &g_pixelDraw.curToolSize, 1, 20);
+
+
+  if(ImGui::Button("Save to PNG")){
+    SavePixelArt();
+  }
 
 
   // Color choosing for drawing
@@ -215,6 +250,10 @@ int main(void) {
 
   g_mainCanvasTexture = LoadTextureFromImage(g_image);
   g_tmpCanvasTexture = LoadTextureFromImage(g_image);
+
+  g_transparentTexture = LoadTextureFromImage(g_image);
+  SetTransparentTexture();
+
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
 
 
@@ -235,6 +274,8 @@ int main(void) {
     // Draw
     //----------------------------------------------------------------------------------
     ClearBackground(WHITE);
+
+    DrawTexture(g_transparentTexture, canvasPosX,canvasPosY,WHITE);
 
     ImGui_ImplRaylib_ProcessEvents();
     ImGui_ImplRaylib_NewFrame();
@@ -277,7 +318,7 @@ int main(void) {
 
       AddCanvasToUndo();
 
-      memcpy(g_mainCanvasPixels, g_tmpCanvasPixels, g_pixelsSize * sizeof(Color));
+      memcpy(g_mainCanvasPixels, g_tmpCanvasPixels, g_canvasPixelsSize * sizeof(Color));
 
       
       UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);

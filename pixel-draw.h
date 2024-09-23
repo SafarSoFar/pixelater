@@ -48,7 +48,7 @@ class PixelDraw{
     void DrawWithBrush(int originX, int originY, Color colorToDraw);
     void DrawWithLine(float x0, float y0, float x1, float y1);
     void DrawWithRectangle();
-    bool IsOutsideOfScreen(int x, int y);
+    bool IsOutsideOfCanvas(int x, int y);
     void Draw();
 
   private:

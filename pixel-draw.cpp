@@ -6,7 +6,7 @@ bool operator==(Color lhs, Color rhs){
   return lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
 }
 
-bool PixelDraw::IsOutsideOfScreen(int x, int y){
+bool PixelDraw::IsOutsideOfCanvas(int x, int y){
   return x < 0 || y < 0 || x >= m_canvasWidth || y >= m_canvasHeight; 
 }
 
@@ -56,7 +56,7 @@ void PixelDraw::DrawCircle(int originX, int originY, int radius, Color color){
     int x0 = originX + radius*cos(angle);
     int y0 = originY + radius*sin(angle);
 
-    if(IsOutsideOfScreen(x0, y0)){
+    if(IsOutsideOfCanvas(x0, y0)){
       continue;
     }
 
@@ -65,16 +65,11 @@ void PixelDraw::DrawCircle(int originX, int originY, int radius, Color color){
 }
 
 void PixelDraw::ClearPixels() {
+  Color transparentColor = Color{0,0,0,0};
   for (int i = 0; i < m_canvasWidth; i++) {
     for(int j = 0; j < m_canvasHeight; j++){
-        m_mainCanvasPixels[i+j*m_canvasWidth] = WHITE;
-        m_tmpCanvasPixels[i+j*m_canvasWidth] = WHITE;
-    }
-  }
-  for(int i = 0; i < m_canvasWidth; i+=2){
-    for(int j = 0; j < m_canvasHeight; j+=2){
-      m_mainCanvasPixels[i+j*m_canvasWidth] = GRAY;
-      m_tmpCanvasPixels[i+j*m_canvasWidth] = GRAY;
+        m_mainCanvasPixels[i+j*m_canvasWidth] = transparentColor;
+        m_tmpCanvasPixels[i+j*m_canvasWidth] = transparentColor;
     }
   }
 }
@@ -96,7 +91,7 @@ void PixelDraw::FillWithColor(int originX, int originY, Color fillColor){
 
     std::pair<int,int> coords = q.front();
     q.pop();
-    if(!IsOutsideOfScreen(coords.first, coords.second) && !isVis[coords.first][coords.second] 
+    if(!IsOutsideOfCanvas(coords.first, coords.second) && !isVis[coords.first][coords.second] 
         && m_tmpCanvasPixels[coords.first + coords.second * m_canvasWidth] == colorToFill){
       m_tmpCanvasPixels[coords.first + coords.second * m_canvasWidth] = fillColor;
       isVis[coords.first][coords.second] = true;
@@ -118,7 +113,7 @@ void PixelDraw::DrawFilledSquare(int originX, int originY, int size, Color color
         i <= originX + size; i++) {
       for (int j = originY - size;
           j <= originY + size; j++) {
-        if (!IsOutsideOfScreen(i, j)){
+        if (!IsOutsideOfCanvas(i, j)){
           m_tmpCanvasPixels[i + j * m_canvasWidth] = color;
         }
       }
@@ -141,7 +136,7 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
 
 
   // checking screen boundaries to prevent segfault
-  if(IsOutsideOfScreen(x0, y0) || IsOutsideOfScreen(x1, y1)){
+  if(IsOutsideOfCanvas(x0, y0) || IsOutsideOfCanvas(x1, y1)){
     return;
   }
 
@@ -160,7 +155,7 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
 
     for(int width = x0 - curToolSize; width <= x0 + curToolSize; width++){
       for(int height = y0 - curToolSize; height <= y0 + curToolSize; height++){
-        if(!IsOutsideOfScreen(width, height)){
+        if(!IsOutsideOfCanvas(width, height)){
           m_tmpCanvasPixels[(int)width + (int)height * m_canvasWidth] = curDrawingColor;
         }
       }
