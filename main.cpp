@@ -43,6 +43,9 @@ Texture2D g_mainCanvasTexture;
 Texture2D g_tmpCanvasTexture;
 Texture2D g_transparentTexture;
 
+ImFont* g_iconFont; 
+ImFont* g_textFont; 
+
 bool g_isHoldingLMB;
 bool g_canInteractWithCanvas = true;
 bool g_isSaveWindowOpen = false;
@@ -154,11 +157,11 @@ void GetMousePosRelativeToCanvas(int canvasPosX, int canvasPosY){
 }
 
 void DrawAndControlGUI() {
+  ImGui::PushFont(g_textFont);
+
   ImGui::Begin("Tool panel");
 
   ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
-
-  ImGui::SliderInt("Tool Size", &g_pixelDraw.curToolSize, 1, 20);
 
 
   if(ImGui::Button("File")){
@@ -176,12 +179,22 @@ void DrawAndControlGUI() {
 
     ImGui::End();
   }
-  
 
+  if (ImGui::Button("Clear Canvas")) {
+    g_pixelDraw.ClearPixels();
+    UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
+    UpdateTexture(g_tmpCanvasTexture, g_mainCanvasPixels);
+  }
 
+  ImGui::SliderInt("Tool Size", &g_pixelDraw.curToolSize, 1, 20);
+
+  ImGui::PopFont();
+
+ /*---- ICONS SECTION -----*/
+ 
   // Color choosing for drawing
   // Changing color only on release for optimization reasons
-  if (ImGui::ColorPicker4("Brush color", g_imGuiColorFloat)) {
+  if (ImGui::ColorPicker4(ICON_FA_PALETTE " Brush Color", g_imGuiColorFloat)) {
     if (!g_isColorPickerPressed) {
       g_isColorPickerPressed = true;
     }
@@ -197,18 +210,13 @@ void DrawAndControlGUI() {
     }
   }
 
-  if (ImGui::Button("Clear Canvas")) {
-    g_pixelDraw.ClearPixels();
-    UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
-    UpdateTexture(g_tmpCanvasTexture, g_mainCanvasPixels);
-  }
-  if (ImGui::Button("Line")) {
+  if (ImGui::Button(ICON_FA_PENCIL_RULER " Line")) {
     g_pixelDraw.curTool = Tool::Line;
   }
-  if (ImGui::Button(ICON_FA_PAINT_BRUSH "  Brush")) {
+  if (ImGui::Button(ICON_FA_PAINT_BRUSH " Brush")) {
     g_pixelDraw.curTool = Tool::Brush;
   }
-  if(ImGui::CollapsingHeader("Brush Shapes")){
+  if(ImGui::CollapsingHeader(ICON_FA_SHAPES " Brush Shapes")){
     if (ImGui::Button("Brush: Circle")) {
       g_pixelDraw.curBrushShape = BrushShape::CircleBrush;
     }
@@ -216,13 +224,13 @@ void DrawAndControlGUI() {
       g_pixelDraw.curBrushShape = BrushShape::SquareBrush;
     }
   }
-  if (ImGui::Button("Eraser")) {
+  if (ImGui::Button(ICON_FA_ERASER " Eraser")) {
     g_pixelDraw.curTool = Tool::Eraser;
   }
-  if (ImGui::Button("Circle")) {
+  if (ImGui::Button(ICON_FA_CIRCLE " Circle")) {
     g_pixelDraw.curTool = Tool::Circle;
   }
-  if (ImGui::Button("Fill")) {
+  if (ImGui::Button(ICON_FA_FILL " Fill")) {
     g_pixelDraw.curTool = Tool::Fill;
   }
   ImGui::End();
@@ -257,11 +265,13 @@ int main(void) {
   icons_config.MergeMode = true; 
   icons_config.PixelSnapH = true; 
   icons_config.GlyphMinAdvanceX = iconFontSize;
-  io.Fonts->AddFontFromFileTTF( "fonts/" FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges );
+  g_iconFont = io.Fonts->AddFontFromFileTTF( "fonts/" FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges );
+  g_textFont = io.Fonts->AddFontFromFileTTF( "fonts/louis-george-cafe.ttf", 20);
+  
 
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-  ImGui::StyleColorsDark();
+  /*ImGui::StyleColorsDark();*/
 
   ImGui_ImplRaylib_Init();
   Imgui_ImplRaylib_BuildFontAtlas();
