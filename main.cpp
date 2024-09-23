@@ -34,6 +34,10 @@ int g_screenWidth = 900;
 int g_screenHeight = 800;
 int g_canvasWidth = 600;
 int g_canvasHeight = 600;
+
+int g_canvasPosX;
+int g_canvasPosY;
+
 int g_canvasPixelsSize = g_canvasWidth * g_canvasHeight;
 Color *g_mainCanvasPixels = new Color[g_canvasPixelsSize];
 Color *g_tmpCanvasPixels = new Color[g_canvasPixelsSize];
@@ -156,6 +160,15 @@ void GetMousePosRelativeToCanvas(int canvasPosX, int canvasPosY){
   g_lastMousePos.y = toWindowPos.y-canvasPosY;
 }
 
+void ControlCanvasPosition(){
+  /*if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)){*/
+  /**/
+  /*}*/
+  if(IsKeyDown(KEY_LEFT_ALT)){
+    g_canvasPosY -= (int)GetMouseWheelMove() * 4;
+  }
+}
+
 void DrawAndControlGUI() {
   ImGui::PushFont(g_textFont);
 
@@ -252,22 +265,30 @@ int main(void) {
   /*SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI);*/
   InitWindow(g_screenWidth, g_screenHeight, "Pixel Editor");
 
-  int canvasPosX = g_screenWidth/2-g_canvasWidth/2;
-  int canvasPosY = g_screenHeight/2-g_canvasHeight/2;
+  g_canvasPosX = g_screenWidth/2-g_canvasWidth/2;
+  g_canvasPosY = g_screenHeight/2-g_canvasHeight/2;
 
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO(); (void)io;
+
   io.Fonts->AddFontDefault();
+
   float baseFontSize = 25.0f;
   float iconFontSize = baseFontSize * 2.0f / 3.0f;
+  /*static const ImWchar rangesFixed[] = {*/
+  /*  0x0020, 0x00FF, // Basic Latin + Latin Supplement*/
+  /*  0x2026, 0x2026, // ellipsis*/
+  /*  0*/
+  /*};*/
   static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+
   ImFontConfig icons_config; 
   icons_config.MergeMode = true; 
-  icons_config.PixelSnapH = true; 
-  icons_config.GlyphMinAdvanceX = iconFontSize;
+  /*io.Fonts->TexDesiredWidth = 2;*/
+
   g_iconFont = io.Fonts->AddFontFromFileTTF( "fonts/" FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges );
   g_textFont = io.Fonts->AddFontFromFileTTF( "fonts/louis-george-cafe.ttf", 20);
-  
+  io.Fonts->Build();
 
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
@@ -308,7 +329,7 @@ int main(void) {
     //----------------------------------------------------------------------------------
     ClearBackground(WHITE);
 
-    DrawTexture(g_transparentTexture, canvasPosX,canvasPosY,WHITE);
+    DrawTexture(g_transparentTexture, g_canvasPosX,g_canvasPosY,WHITE);
 
     ImGui_ImplRaylib_ProcessEvents();
     ImGui_ImplRaylib_NewFrame();
@@ -319,8 +340,9 @@ int main(void) {
     BeginDrawing();
 
 
-    
-    GetMousePosRelativeToCanvas(canvasPosX, canvasPosY);
+     
+    GetMousePosRelativeToCanvas(g_canvasPosX, g_canvasPosY);
+    ControlCanvasPosition();
 
     UndoControl();
 
@@ -335,7 +357,7 @@ int main(void) {
         g_LMBHoldingFirstPos = g_lastMousePos;
       }
 
-      DrawTexture(g_tmpCanvasTexture, canvasPosX,canvasPosY,WHITE);
+      DrawTexture(g_tmpCanvasTexture, g_canvasPosX,g_canvasPosY,WHITE);
       Draw();
 
     } else {
@@ -344,7 +366,7 @@ int main(void) {
         g_isHoldingLMB = false;
       }
 
-      DrawTexture(g_mainCanvasTexture, canvasPosX, canvasPosY, WHITE);
+      DrawTexture(g_mainCanvasTexture, g_canvasPosX, g_canvasPosY, WHITE);
 
     }
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
