@@ -5,10 +5,12 @@
 #include "raylib.h"
 #include "rlImGui/rlImGui.h"
 #include <cmath>
+#include <iostream>
 #include <vector>
 #include <cstring>
 #include "IconsFontAwesome5.h"
 #include <raylib.h>
+#include <raymath.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
@@ -21,11 +23,14 @@ bool operator==(Vector2 lhs, Vector2 rhs) {
   return lhs.x == rhs.x && lhs.y == rhs.y;
 }
 
+Vector2 operator-(Vector2 lhs, Vector2 rhs){
+  return Vector2{rhs.x-lhs.x, rhs.y - lhs.y};
+}
+
 
 // temporary global logic
 float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
 bool g_isColorPickerPressed;
-
 
 #define MAX_OUTPUT_FILE_SIZE 10
 char g_outputFileName[MAX_OUTPUT_FILE_SIZE];
@@ -35,8 +40,8 @@ int g_screenHeight = 800;
 int g_canvasWidth = 600;
 int g_canvasHeight = 600;
 
-int g_canvasPosX;
-int g_canvasPosY;
+Vector2 g_canvasPos;
+Vector2 g_canvasPosBeforeDrag;
 
 int g_canvasPixelsSize = g_canvasWidth * g_canvasHeight;
 Color *g_mainCanvasPixels = new Color[g_canvasPixelsSize];
@@ -51,15 +56,21 @@ ImFont* g_iconFont;
 ImFont* g_textFont; 
 
 bool g_isHoldingLMB;
+bool g_isMouseDragginCanvas = false;
 bool g_canInteractWithCanvas = true;
 bool g_isSaveWindowOpen = false;
 
 
-Vector2 g_LMBHoldingFirstPos = {0.0f, 0.0f};
-Vector2 g_lastMousePos = {0.0f, 0.0f};
+Vector2 g_LMBHoldingFirstPos = Vector2Zero();
+Vector2 g_lastMousePos = Vector2Zero();
+Vector2 g_tmpLastMousePos = Vector2Zero();
+Vector2 g_lastMouseDir = Vector2Zero();
 
 // The only way is to use std::array instead of C-arrays and convert them along the way
 vector<vector<Color>> previousCanvasColorPixels;
+
+
+
 
 
 void SavePixelArt(char fileName[10]){
@@ -154,18 +165,28 @@ void SetTransparentTexture(){
 }
 
 
-void GetMousePosRelativeToCanvas(int canvasPosX, int canvasPosY){
-  Vector2 toWindowPos = GetMousePosition();
-  g_lastMousePos.x = toWindowPos.x-canvasPosX;
-  g_lastMousePos.y = toWindowPos.y-canvasPosY;
+void GetMousePosRelativeToCanvas(){
+  Vector2 onWindowPos = GetMousePosition();
+  g_lastMousePos = g_canvasPos - onWindowPos;
 }
 
 void ControlCanvasPosition(){
   /*if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)){*/
   /**/
   /*}*/
-  if(IsKeyDown(KEY_LEFT_ALT)){
-    g_canvasPosY -= (int)GetMouseWheelMove() * 4;
+  
+  if(g_isHoldingLMB && IsKeyDown(KEY_LEFT_ALT)){
+    if(!g_isMouseDragginCanvas){
+      g_canvasPosBeforeDrag = g_canvasPos;
+    }
+    g_isMouseDragginCanvas = true;
+    Vector2 distance = g_LMBHoldingFirstPos - g_lastMousePos; 
+    std::cout<<distance.x<<'\n';
+    std::cout<<distance.y<<'\n';
+    g_canvasPos = g_canvasPosBeforeDrag-distance;
+  }
+  else if(!g_isHoldingLMB && g_isMouseDragginCanvas){
+    g_isMouseDragginCanvas = false;
   }
 }
 
@@ -265,8 +286,8 @@ int main(void) {
   /*SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI);*/
   InitWindow(g_screenWidth, g_screenHeight, "Pixel Editor");
 
-  g_canvasPosX = g_screenWidth/2-g_canvasWidth/2;
-  g_canvasPosY = g_screenHeight/2-g_canvasHeight/2;
+  g_canvasPos.x = g_screenWidth/2-g_canvasWidth/2;
+  g_canvasPos.y = g_screenHeight/2-g_canvasHeight/2;
 
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -329,7 +350,7 @@ int main(void) {
     //----------------------------------------------------------------------------------
     ClearBackground(WHITE);
 
-    DrawTexture(g_transparentTexture, g_canvasPosX,g_canvasPosY,WHITE);
+    DrawTexture(g_transparentTexture, g_canvasPos.x,g_canvasPos.y,WHITE);
 
     ImGui_ImplRaylib_ProcessEvents();
     ImGui_ImplRaylib_NewFrame();
@@ -340,8 +361,9 @@ int main(void) {
     BeginDrawing();
 
 
-     
-    GetMousePosRelativeToCanvas(g_canvasPosX, g_canvasPosY);
+    Vector2 tmpMousePosition = g_lastMousePos;  
+    GetMousePosRelativeToCanvas();
+
     ControlCanvasPosition();
 
     UndoControl();
@@ -357,7 +379,7 @@ int main(void) {
         g_LMBHoldingFirstPos = g_lastMousePos;
       }
 
-      DrawTexture(g_tmpCanvasTexture, g_canvasPosX,g_canvasPosY,WHITE);
+      DrawTexture(g_tmpCanvasTexture, g_canvasPos.x,g_canvasPos.y,WHITE);
       Draw();
 
     } else {
@@ -366,7 +388,7 @@ int main(void) {
         g_isHoldingLMB = false;
       }
 
-      DrawTexture(g_mainCanvasTexture, g_canvasPosX, g_canvasPosY, WHITE);
+      DrawTexture(g_mainCanvasTexture, g_canvasPos.x, g_canvasPos.y, WHITE);
 
     }
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
