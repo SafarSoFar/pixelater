@@ -268,6 +268,19 @@ void DrawAndControlGUI() {
     g_pixelDraw.curTool = Tool::Fill;
   }
   ImGui::End();
+  bool isScrollbarsOpen = true;
+
+  /*-----HORIZONTAL VIEW SCROLLBAR--------*/
+  ImGui::Begin("Horizontal bar",&isScrollbarsOpen, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+  ImGui::SetWindowPos(ImVec2(0, g_screenHeight-40));
+  ImGui::SliderFloat("Horizontal view", &g_canvasPos.x, 0-g_canvasWidth, g_screenWidth, "%.0f");
+  ImGui::End();
+
+  /*-----VERTICAL VIEW SCROLLBAR--------*/
+  ImGui::Begin("Vertical bar",&isScrollbarsOpen, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+  ImGui::SetWindowPos(ImVec2(g_screenWidth-40, 0));
+  ImGui::SliderFloat("Vertical view", &g_canvasPos.y, 0-g_canvasHeight, g_screenHeight, "%.0f");
+  ImGui::End();
 }
 
 
