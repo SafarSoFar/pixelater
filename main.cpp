@@ -3,8 +3,6 @@
 #include "rlImGui/imgui_impl_raylib.h"
 #include "pixel-draw.h"
 #include "raylib.h"
-#include "rlImGui/rlImGui.h"
-#include <cmath>
 #include <iostream>
 #include <vector>
 #include <cstring>
@@ -56,15 +54,13 @@ ImFont* g_iconFont;
 ImFont* g_textFont; 
 
 bool g_isHoldingLMB;
-bool g_isMouseDragginCanvas = false;
+bool g_isMouseDraggingCanvas = false;
 bool g_canInteractWithCanvas = true;
 bool g_isSaveWindowOpen = false;
 
 
 Vector2 g_LMBHoldingFirstPos = Vector2Zero();
 Vector2 g_lastMousePos = Vector2Zero();
-Vector2 g_tmpLastMousePos = Vector2Zero();
-Vector2 g_lastMouseDir = Vector2Zero();
 
 // The only way is to use std::array instead of C-arrays and convert them along the way
 vector<vector<Color>> previousCanvasColorPixels;
@@ -165,8 +161,13 @@ void SetTransparentTexture(){
 }
 
 
-void GetMousePosRelativeToCanvas(){
+void SetMousePosRelativeToCanvas(){
   Vector2 onWindowPos = GetMousePosition();
+  if(g_isMouseDraggingCanvas){
+    g_lastMousePos = g_canvasPosBeforeDrag - onWindowPos;
+    return;
+  }
+
   g_lastMousePos = g_canvasPos - onWindowPos;
 }
 
@@ -175,18 +176,17 @@ void ControlCanvasPosition(){
   /**/
   /*}*/
   
+  // TODO when clicking at the same spot, canvas can jump to two positions for whatever reason
   if(g_isHoldingLMB && IsKeyDown(KEY_LEFT_ALT)){
-    if(!g_isMouseDragginCanvas){
+    if(!g_isMouseDraggingCanvas){
       g_canvasPosBeforeDrag = g_canvasPos;
     }
-    g_isMouseDragginCanvas = true;
-    Vector2 distance = g_LMBHoldingFirstPos - g_lastMousePos; 
-    std::cout<<distance.x<<'\n';
-    std::cout<<distance.y<<'\n';
-    g_canvasPos = g_canvasPosBeforeDrag-distance;
+    g_isMouseDraggingCanvas = true;
+    Vector2 differenceVector = g_LMBHoldingFirstPos - g_lastMousePos; 
+    g_canvasPos = g_canvasPosBeforeDrag-differenceVector;
   }
-  else if(!g_isHoldingLMB && g_isMouseDragginCanvas){
-    g_isMouseDragginCanvas = false;
+  else if(!g_isHoldingLMB && g_isMouseDraggingCanvas){
+    g_isMouseDraggingCanvas = false;
   }
 }
 
@@ -361,9 +361,9 @@ int main(void) {
     BeginDrawing();
 
 
-    Vector2 tmpMousePosition = g_lastMousePos;  
-    GetMousePosRelativeToCanvas();
 
+
+    SetMousePosRelativeToCanvas();
     ControlCanvasPosition();
 
     UndoControl();
