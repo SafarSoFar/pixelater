@@ -358,6 +358,16 @@ int main(void) {
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO(); (void)io;
 
+  ImGuiStyle* style = &ImGui::GetStyle();
+  style->Colors[ImGuiCol_Border] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+  style->Colors[ImGuiCol_Button] = ImVec4(0.0f,0.0f,0.0f,1.0f);
+  style->Colors[ImGuiCol_Header] = ImVec4(0.0f,0.0f,0.0f,1.0f);
+  style->Colors[ImGuiCol_FrameBg] = ImVec4(0.0f,0.0f,0.0f,1.0f);
+  /*style->Colors[ImGuiCol_TitleBg] = ImVec4(0.0f,0.0f,0.0f,1.0f);*/
+  style->FrameBorderSize = 2;
+  style->FrameRounding = 3;
+  style->ChildRounding = 3;
+
   io.Fonts->AddFontDefault();
 
   float baseFontSize = 25.0f;
