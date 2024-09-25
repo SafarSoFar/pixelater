@@ -38,6 +38,8 @@ int g_screenHeight = 960;
 int g_canvasWidth = 600;
 int g_canvasHeight = 600;
 
+float g_canvasScale = 1.0f;
+
 Vector2 g_canvasPos;
 Vector2 g_canvasPosBeforeDrag;
 
@@ -171,10 +173,19 @@ void SetMousePosRelativeToCanvas(){
   g_lastMousePos = g_canvasPos - onWindowPos;
 }
 
-void ControlCanvasPosition(){
+void ControlCanvasTransform(){
   /*if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)){*/
   /**/
   /*}*/
+
+  if(IsKeyDown(KEY_LEFT_CONTROL)){
+    if(IsKeyPressed(KEY_EQUAL)){
+      g_canvasScale += 0.2f;
+    }
+    else if(IsKeyPressed(KEY_MINUS)){
+      g_canvasScale -= 0.2f;
+    }
+  }
   
   // TODO when clicking at the same spot, canvas can jump to two positions for whatever reason
   if(g_isHoldingLMB && IsKeyDown(KEY_LEFT_ALT)){
@@ -199,7 +210,7 @@ void DrawAndControlGUI() {
   if(ImGui::BeginMenuBar()){
     if(ImGui::BeginMenu("File")){
       if(ImGui::MenuItem("Save image", "Ctrl+S")){
-      
+        g_isSaveWindowOpen = true;      
       }
       ImGui::EndMenu();
     } 
@@ -212,10 +223,6 @@ void DrawAndControlGUI() {
 
   ImGui::SetWindowPos(ImVec2(0.0f, 30.0f));
 
-
-  if(ImGui::Button("File")){
-    g_isSaveWindowOpen = true;
-  }
 
   if(g_isSaveWindowOpen){
     ImGui::Begin("File",&g_isSaveWindowOpen);
@@ -382,7 +389,7 @@ int main(void) {
     //----------------------------------------------------------------------------------
     ClearBackground(WHITE);
 
-    DrawTexture(g_transparentTexture, g_canvasPos.x,g_canvasPos.y,WHITE);
+    DrawTextureEx(g_transparentTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
 
     ImGui_ImplRaylib_ProcessEvents();
     ImGui_ImplRaylib_NewFrame();
@@ -396,7 +403,7 @@ int main(void) {
 
 
     SetMousePosRelativeToCanvas();
-    ControlCanvasPosition();
+    ControlCanvasTransform();
 
     UndoControl();
 
@@ -411,7 +418,8 @@ int main(void) {
         g_LMBHoldingFirstPos = g_lastMousePos;
       }
 
-      DrawTexture(g_tmpCanvasTexture, g_canvasPos.x,g_canvasPos.y,WHITE);
+      DrawTextureEx(g_tmpCanvasTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
+
       Draw();
 
     } else {
@@ -420,7 +428,7 @@ int main(void) {
         g_isHoldingLMB = false;
       }
 
-      DrawTexture(g_mainCanvasTexture, g_canvasPos.x, g_canvasPos.y, WHITE);
+      DrawTextureEx(g_mainCanvasTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
 
     }
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
