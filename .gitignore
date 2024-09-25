@@ -3,3 +3,4 @@
 *.png
 build/*
 game
+compile.sh
