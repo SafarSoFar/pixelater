@@ -1,3 +1,5 @@
 */*.o
 *.o
 *.png
+build/*
+game
