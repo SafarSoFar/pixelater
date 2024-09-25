@@ -25,6 +25,10 @@ Vector2 operator-(Vector2 lhs, Vector2 rhs){
   return Vector2{rhs.x-lhs.x, rhs.y - lhs.y};
 }
 
+Vector2 operator*(Vector2 lhs, float rhs){
+  return Vector2{lhs.x*rhs, lhs.y*rhs};
+}
+
 
 // temporary global logic
 float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
@@ -173,6 +177,19 @@ void SetMousePosRelativeToCanvas(){
   g_lastMousePos = g_canvasPos - onWindowPos;
 }
 
+void ControlGUIHotKeys(){
+  if(IsKeyDown(KEY_LEFT_CONTROL)){
+    if(IsKeyPressed(KEY_S)){
+      g_isSaveWindowOpen = true;
+    }
+  }
+}
+
+void CenterCanvasPos(){
+  g_canvasPos.x = g_screenWidth/2-(g_canvasWidth*g_canvasScale)/2;
+  g_canvasPos.y = g_screenHeight/2-(g_canvasHeight*g_canvasScale)/2;
+}
+
 void ControlCanvasTransform(){
   /*if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)){*/
   /**/
@@ -181,9 +198,11 @@ void ControlCanvasTransform(){
   if(IsKeyDown(KEY_LEFT_CONTROL)){
     if(IsKeyPressed(KEY_EQUAL)){
       g_canvasScale += 0.2f;
+      CenterCanvasPos();
     }
     else if(IsKeyPressed(KEY_MINUS)){
       g_canvasScale -= 0.2f;
+      CenterCanvasPos();
     }
   }
   
@@ -202,6 +221,11 @@ void ControlCanvasTransform(){
 }
 
 void DrawAndControlGUI() {
+
+  ImGui_ImplRaylib_ProcessEvents();
+  ImGui_ImplRaylib_NewFrame();
+  ImGui::NewFrame();
+  
   ImGui::PushFont(g_textFont);
   bool isFunctionsPanelOpened = true;
   ImGui::Begin("Functions panel", &isFunctionsPanelOpened, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
@@ -306,7 +330,12 @@ void DrawAndControlGUI() {
   /*ImGui::SetWindowPos(ImVec2(400, 0));*/
   /*ImGui::SliderFloat("##Vertical view", &g_canvasPos.y, 0-g_canvasHeight, g_screenHeight, "%.0f");*/
   /*ImGui::End();*/
+
+  ImGui::Render();
+  ImGui_ImplRaylib_RenderDrawData(ImGui::GetDrawData());
+
 }
+
 
 
 // buggy
@@ -324,8 +353,7 @@ int main(void) {
   /*SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI);*/
   InitWindow(g_screenWidth, g_screenHeight, "Pixel Editor");
 
-  g_canvasPos.x = g_screenWidth/2-g_canvasWidth/2;
-  g_canvasPos.y = g_screenHeight/2-g_canvasHeight/2;
+  CenterCanvasPos();
 
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -391,14 +419,12 @@ int main(void) {
 
     DrawTextureEx(g_transparentTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
 
-    ImGui_ImplRaylib_ProcessEvents();
-    ImGui_ImplRaylib_NewFrame();
-    ImGui::NewFrame();
-    DrawAndControlGUI();
-
-    ImGui::Render();
     BeginDrawing();
 
+    DrawAndControlGUI();
+
+
+    ControlGUIHotKeys();
 
 
 
@@ -444,7 +470,6 @@ int main(void) {
       
     }
 
-    ImGui_ImplRaylib_RenderDrawData(ImGui::GetDrawData());
     EndDrawing();
     //----------------------------------------------------------------------------------
   }
