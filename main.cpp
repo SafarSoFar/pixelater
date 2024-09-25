@@ -33,8 +33,8 @@ bool g_isColorPickerPressed;
 #define MAX_OUTPUT_FILE_SIZE 10
 char g_outputFileName[MAX_OUTPUT_FILE_SIZE];
 
-int g_screenWidth = 900;
-int g_screenHeight = 800;
+int g_screenWidth = 1280;
+int g_screenHeight = 960;
 int g_canvasWidth = 600;
 int g_canvasHeight = 600;
 
@@ -192,10 +192,25 @@ void ControlCanvasPosition(){
 
 void DrawAndControlGUI() {
   ImGui::PushFont(g_textFont);
+  bool isFunctionsPanelOpened = true;
+  ImGui::Begin("Functions panel", &isFunctionsPanelOpened, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+  ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
+  ImGui::SetWindowSize(ImVec2(g_screenWidth, 30));
+  if(ImGui::BeginMenuBar()){
+    if(ImGui::BeginMenu("File")){
+      if(ImGui::MenuItem("Save image", "Ctrl+S")){
+      
+      }
+      ImGui::EndMenu();
+    } 
+    ImGui::EndMenuBar();
+  }
+  ImGui::End(); // Functions panel
+
 
   ImGui::Begin("Tool panel");
 
-  ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
+  ImGui::SetWindowPos(ImVec2(0.0f, 30.0f));
 
 
   if(ImGui::Button("File")){
@@ -272,15 +287,18 @@ void DrawAndControlGUI() {
 
   /*-----HORIZONTAL VIEW SCROLLBAR--------*/
   ImGui::Begin("Horizontal bar",&isScrollbarsOpen, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+  ImGui::PushItemWidth(g_screenWidth-17);
   ImGui::SetWindowPos(ImVec2(0, g_screenHeight-40));
-  ImGui::SliderFloat("Horizontal view", &g_canvasPos.x, 0-g_canvasWidth, g_screenWidth, "%.0f");
+  ImGui::SetWindowSize(ImVec2(g_screenWidth, 40));
+  ImGui::SliderFloat("##Horizontal view", &g_canvasPos.x, 0-g_canvasWidth, g_screenWidth, "%.0f");
   ImGui::End();
 
   /*-----VERTICAL VIEW SCROLLBAR--------*/
-  ImGui::Begin("Vertical bar",&isScrollbarsOpen, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
-  ImGui::SetWindowPos(ImVec2(g_screenWidth-40, 0));
-  ImGui::SliderFloat("Vertical view", &g_canvasPos.y, 0-g_canvasHeight, g_screenHeight, "%.0f");
-  ImGui::End();
+  /*ImGui::Begin("Vertical bar",&isScrollbarsOpen, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);*/
+  /*ImGui::PushItemWidth(g_screenWidth-17);*/
+  /*ImGui::SetWindowPos(ImVec2(400, 0));*/
+  /*ImGui::SliderFloat("##Vertical view", &g_canvasPos.y, 0-g_canvasHeight, g_screenHeight, "%.0f");*/
+  /*ImGui::End();*/
 }
 
 
@@ -342,6 +360,7 @@ int main(void) {
   g_transparentTexture = LoadTextureFromImage(g_image);
   SetTransparentTexture();
 
+  /*ToggleFullscreen();*/
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
 
 
