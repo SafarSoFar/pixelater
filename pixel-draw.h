@@ -49,12 +49,13 @@ class PixelDraw{
     void FillWithColor(int originX, int originY, Color fillColor);
     void DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color, bool spawnMultipleInstances);
     void DrawCenteredCircle(int centerX, int centerY, int radiusX, int radiusY, Color color, bool spawnMultipleInstances);
-    void DrawCircle(int originX, int originY, int radius, Color color);
-    void DrawFilledCircle(int originX, int originY, int radius, Color color);
+    void DrawCircle(int originX, int originY, int radius);
+    void DrawFilledCircle(int originX, int originY, int radius);
     void DrawFilledSquare(int originX, int originY, 
     int size, Color color);
     void DrawPixelBlock(int drawPosX, int drawPosY, Color color);
-    void DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int originY, Color colorToDraw);
+    void Erase(int originX, int drawPosY);
+    void DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int originY);
     void DrawWithLine(float x0, float y0, float x1, float y1);
     void DrawWithRectangle();
     bool IsOutsideOfCanvas(int x, int y);

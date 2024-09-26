@@ -24,8 +24,8 @@ bool g_isColorPickerPressed;
 #define MAX_OUTPUT_FILE_SIZE 10
 char g_outputFileName[MAX_OUTPUT_FILE_SIZE];
 
-int g_screenWidth = 1600;
-int g_screenHeight = 1200;
+int g_screenWidth = 1280;
+int g_screenHeight = 900;
 int g_canvasWidth = 512;
 int g_canvasHeight = 512;
 int g_pixelBlockSize = g_canvasWidth/128;
@@ -50,7 +50,8 @@ ImFont* g_textFont;
 bool g_isHoldingLMB;
 bool g_isMouseDraggingCanvas = false;
 bool g_canInteractWithCanvas = true;
-bool g_isSaveWindowOpen = false;
+bool g_isSaveImageWindowOpen = false;
+bool g_isNewCanvasWindowOpen = false;
 
 
 Vector2 g_LMBHoldingFirstPos = Vector2Zero();
@@ -106,12 +107,12 @@ void Draw() {
     g_pixelDraw.DrawWithLine(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y, g_lastMousePos.x, g_lastMousePos.y);
     break;
   case Brush:
-    g_pixelDraw.DrawWithBrush(g_prevLastMousePos.x, g_prevLastMousePos.y, g_lastMousePos.x, g_lastMousePos.y, g_pixelDraw.curDrawingColor);
+    g_pixelDraw.DrawWithBrush(g_prevLastMousePos.x, g_prevLastMousePos.y, g_lastMousePos.x, g_lastMousePos.y);
   case Rect:
     g_pixelDraw.DrawWithRectangle();
     break;
   case Eraser:
-    g_pixelDraw.DrawWithBrush(g_prevLastMousePos.x, g_prevLastMousePos.y, g_lastMousePos.x, g_lastMousePos.y, WHITE);
+    g_pixelDraw.Erase(g_lastMousePos.x, g_lastMousePos.y);
     break;
   case Circle:
     // The first mouse position is the center, if user is holding left alt - don't delete intermidiate stepsinclude "IconsFontAwesome5.h"
@@ -192,7 +193,7 @@ void SetMousePosRelativeToCanvas(){
 void ControlGUIHotKeys(){
   if(IsKeyDown(KEY_LEFT_CONTROL)){
     if(IsKeyPressed(KEY_S)){
-      g_isSaveWindowOpen = true;
+      g_isSaveImageWindowOpen = true;
     }
   }
 }
@@ -232,6 +233,32 @@ void ControlCanvasTransform(){
   }
 }
 
+void ControlPopUpWindows(){
+  if(g_isSaveImageWindowOpen){
+    ImGui::Begin("File",&g_isSaveImageWindowOpen);
+
+    ImGui::InputText("Enter the file name",  g_outputFileName, MAX_OUTPUT_FILE_SIZE);
+
+    if(ImGui::Button("Save to PNG")){
+      SavePixelArt(g_outputFileName);
+    }
+
+    ImGui::End();
+  }
+
+  if(g_isNewCanvasWindowOpen){
+    ImGui::Begin("Canvas",&g_isNewCanvasWindowOpen);
+
+    ImGui::InputText("Enter the file name",  g_outputFileName, MAX_OUTPUT_FILE_SIZE);
+
+    if(ImGui::Button("Save to PNG")){
+      SavePixelArt(g_outputFileName);
+    }
+
+    ImGui::End();
+  }
+}
+
 void DrawAndControlGUI() {
 
   ImGui_ImplRaylib_ProcessEvents();
@@ -243,13 +270,23 @@ void DrawAndControlGUI() {
   ImGui::Begin("Functions panel", &isFunctionsPanelOpened, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
   ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
   ImGui::SetWindowSize(ImVec2(g_screenWidth, 30));
+
   if(ImGui::BeginMenuBar()){
+
     if(ImGui::BeginMenu("File")){
-      if(ImGui::MenuItem("Save image", "Ctrl+S")){
-        g_isSaveWindowOpen = true;      
+
+      if(ImGui::MenuItem("New Canvas", "Ctrl+N")){
+        g_isNewCanvasWindowOpen = true;      
       }
+
+      if(ImGui::MenuItem("Save image", "Ctrl+S")){
+        g_isSaveImageWindowOpen = true;      
+      }
+
       ImGui::EndMenu();
+
     } 
+
     if(ImGui::BeginMenu("Donate")){
       if(ImGui::MenuItem("Patreon")){
         OpenURL("https://www.patreon.com/SoFarDevelopment");
@@ -260,23 +297,12 @@ void DrawAndControlGUI() {
   }
   ImGui::End(); // Functions panel
 
+  ControlPopUpWindows();
 
   ImGui::Begin("Tool panel");
 
   ImGui::SetWindowPos(ImVec2(0.0f, 30.0f));
 
-
-  if(g_isSaveWindowOpen){
-    ImGui::Begin("File",&g_isSaveWindowOpen);
-
-    ImGui::InputText("Enter the file name",  g_outputFileName, MAX_OUTPUT_FILE_SIZE);
-
-    if(ImGui::Button("Save to PNG")){
-      SavePixelArt(g_outputFileName);
-    }
-
-    ImGui::End();
-  }
 
   if (ImGui::Button("Clear Canvas")) {
     g_pixelDraw.ClearPixels();

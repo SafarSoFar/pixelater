@@ -3,6 +3,7 @@
 #include <iostream>
 #include <raymath.h>
 
+
 bool operator==(Vector2 lhs, Vector2 rhs) {
   return lhs.x == rhs.x && lhs.y == rhs.y;
 }
@@ -48,7 +49,7 @@ void PixelDraw::DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color
   // size as distance
   int size = sqrt(pow(x1-x0, 2) + pow(y1-y0,2));
   for(int i = size; i <= size+curToolSize; i++){
-    PixelDraw::DrawCircle(midX, midY, i, color);
+    PixelDraw::DrawCircle(midX, midY, i);
   }
 }
 
@@ -60,20 +61,20 @@ void PixelDraw::DrawCenteredCircle(int centerX, int centerY, int radiusX, int ra
   }
 
   for(int i = radius; i <= radius+curToolSize; i++){
-    PixelDraw::DrawCircle(centerX, centerY, i, color);
+    PixelDraw::DrawCircle(centerX, centerY, i);
   }
 
 }
 
-void PixelDraw::DrawFilledCircle(int originX, int originY, int radius, Color color){
+void PixelDraw::DrawFilledCircle(int originX, int originY, int radius){
   for(int i = 1; i < radius; i++){
-    PixelDraw::DrawCircle(originX, originY, i, color);
+    PixelDraw::DrawCircle(originX, originY, i);
   }
 }
 
 
-void PixelDraw::DrawCircle(int originX, int originY, int radius, Color color){
-  for(double angle = 0; angle<2*PI; angle+=0.001){
+void PixelDraw::DrawCircle(int originX, int originY, int radius){
+  for(double angle = 0; angle<2*PI; angle+=0.001*m_pixelBlockSize){
     int x0 = originX + radius*cos(angle);
     int y0 = originY + radius*sin(angle);
 
@@ -81,7 +82,7 @@ void PixelDraw::DrawCircle(int originX, int originY, int radius, Color color){
       continue;
     }
 
-    PixelDraw::DrawPixelBlock(x0, y0, color);
+    PixelDraw::DrawPixelBlock(x0, y0, curDrawingColor);
   }
 }
 
@@ -90,6 +91,9 @@ void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color){
   /*drawPosY = (float)drawPosY/(m_canvasHeight) * m_pixelBlockSize;*/
   /*drawPosX *= 32;*/
   /*drawPosY *= 32;*/
+  if(IsOutsideOfCanvas(drawPosX, drawPosY)){
+    return;
+  }
 
   drawPosX -= drawPosX % m_pixelBlockSize;
   drawPosY -= drawPosY % m_pixelBlockSize;
@@ -158,25 +162,29 @@ void PixelDraw::DrawFilledSquare(int originX, int originY, int size, Color color
     }
 }
 
+void PixelDraw::Erase(int drawPosX, int drawPosY){
+  PixelDraw::DrawPixelBlock(drawPosX, drawPosY, BLANK);
+}
 
-void PixelDraw::DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int originY, Color colorToDraw) {
+void PixelDraw::DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int originY) {
 
-  /*float timeDelta = GetFrameTime();*/
-  /*float time = 0.5f;*/
-  /*while(timeDelta < time){*/
-  /*  int intermediateX = Lerp(prevOriginX, originX, timeDelta/time);*/
-  /*  int intermediateY = Lerp(prevOriginY, originY, timeDelta/time);*/
-  /**/
-  /*  if(curBrushShape == BrushShape::SquareBrush){*/
-  /*    DrawFilledSquare(intermediateX, intermediateY, curToolSize, colorToDraw);*/
-  /*  }*/
-  /*  else{*/
-  /*    DrawCircle(intermediateX, intermediateY, curToolSize, colorToDraw);*/
-  /*  }*/
-  /**/
-  /*  timeDelta += GetFrameTime();*/
-  /*}*/
-  DrawPixelBlock(originX, originY, colorToDraw);
+  float timeDelta = GetFrameTime();
+  float time = 0.5f;
+  while(timeDelta < time){
+    int intermediateX = Lerp(prevOriginX, originX, timeDelta/time);
+    int intermediateY = Lerp(prevOriginY, originY, timeDelta/time);
+
+    /*if(curBrushShape == BrushShape::SquareBrush){*/
+    /*  DrawFilledSquare(intermediateX, intermediateY, curToolSize, colorToDraw);*/
+    /*}*/
+    /*else{*/
+    /*  DrawCircle(intermediateX, intermediateY, curToolSize, colorToDraw);*/
+    /*}*/
+
+    DrawPixelBlock(intermediateX, intermediateY, curDrawingColor);
+
+    timeDelta += GetFrameTime();
+  }
 
 }
 
