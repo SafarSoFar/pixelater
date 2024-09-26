@@ -28,6 +28,14 @@ enum BrushShape{
 
 
 bool operator==(Color lhs, Color rhs);
+bool operator==(Color lhsColor, Color rhsColor);
+
+Vector2 operator-(Vector2 lhs, Vector2 rhs);
+Vector2 operator*(Vector2 lhs, float rhs);
+Vector2 operator/(Vector2 lhs, float rhs);
+Vector2 operator/(Vector2 lhsVec, int scalarRhs);
+
+
 
 class PixelDraw{
   public: 
@@ -36,7 +44,7 @@ class PixelDraw{
     int curToolSize = 1;
     Color curDrawingColor = BLACK;
 
-    PixelDraw(int canvasWidth, int canvasHeight, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
+    PixelDraw(int canvasWidth, int canvasHeight, int pixelBlockSize, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
     void ClearPixels(); 
     void FillWithColor(int originX, int originY, Color fillColor);
     void DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color, bool spawnMultipleInstances);
@@ -45,6 +53,7 @@ class PixelDraw{
     void DrawFilledCircle(int originX, int originY, int radius, Color color);
     void DrawFilledSquare(int originX, int originY, 
     int size, Color color);
+    void DrawPixelBlock(int drawPosX, int drawPosY, Color color);
     void DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int originY, Color colorToDraw);
     void DrawWithLine(float x0, float y0, float x1, float y1);
     void DrawWithRectangle();
@@ -53,6 +62,7 @@ class PixelDraw{
 
   private:
     bool m_isFillingCanvas = false;
+    int m_pixelBlockSize;
     int m_canvasWidth;
     int m_canvasHeight;
     int m_pixelsSize;

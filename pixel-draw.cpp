@@ -1,17 +1,37 @@
 #include "pixel-draw.h"
 #include "imgui/imgui.h"
+#include <iostream>
 #include <raymath.h>
 
+bool operator==(Vector2 lhs, Vector2 rhs) {
+  return lhs.x == rhs.x && lhs.y == rhs.y;
+}
 
-bool operator==(Color lhs, Color rhs){
-  return lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
+Vector2 operator-(Vector2 lhs, Vector2 rhs){
+  return Vector2{rhs.x-lhs.x, rhs.y - lhs.y};
+}
+
+Vector2 operator*(Vector2 lhs, float rhs){
+  return Vector2{lhs.x*rhs, lhs.y*rhs};
+}
+Vector2 operator/(Vector2 lhs, float rhs){
+  return Vector2{lhs.x/rhs, lhs.y/rhs};
+}
+
+bool operator==(Color lhsColor, Color rhsColor){
+  return lhsColor.r == rhsColor.r && lhsColor.g == rhsColor.g && lhsColor.b == rhsColor.b && lhsColor.a == rhsColor.a;
+}
+
+Vector2 operator/(Vector2 lhsVec, int scalarRhs){
+  return Vector2{lhsVec.x / scalarRhs, lhsVec.y / scalarRhs};
 }
 
 bool PixelDraw::IsOutsideOfCanvas(int x, int y){
   return x < 0 || y < 0 || x >= m_canvasWidth || y >= m_canvasHeight; 
 }
 
-PixelDraw::PixelDraw(int screenWidth, int screenHeight, Color tmpCanvasPixels[], Color mainCanvasPixels[]){
+PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Color tmpCanvasPixels[], Color mainCanvasPixels[]){
+  this->m_pixelBlockSize = pixelBlockSize;
   this->m_canvasWidth = screenWidth;
   this->m_canvasHeight = screenHeight;
   this->m_pixelsSize = screenWidth * screenHeight;
@@ -61,8 +81,25 @@ void PixelDraw::DrawCircle(int originX, int originY, int radius, Color color){
       continue;
     }
 
-    m_tmpCanvasPixels[x0 + y0 * m_canvasWidth] = color;  
+    PixelDraw::DrawPixelBlock(x0, y0, color);
   }
+}
+
+void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color){
+  /*drawPosX = (float)drawPosX/(m_canvasWidth) * m_pixelBlockSize;*/
+  /*drawPosY = (float)drawPosY/(m_canvasHeight) * m_pixelBlockSize;*/
+  /*drawPosX *= 32;*/
+  /*drawPosY *= 32;*/
+
+  drawPosX -= drawPosX % m_pixelBlockSize;
+  drawPosY -= drawPosY % m_pixelBlockSize;
+  for(int i = drawPosX; i < m_canvasWidth && i <= drawPosX+m_pixelBlockSize; i++){
+    for(int j = drawPosY; j < m_canvasHeight && j <= drawPosY+m_pixelBlockSize; j++){
+      m_tmpCanvasPixels[i + j * m_canvasWidth] = color;
+    }
+  }
+  
+  /*m_tmpCanvasPixels[drawPosX + drawPosY * m_canvasWidth] = color;*/
 }
 
 void PixelDraw::ClearPixels() {
@@ -124,21 +161,22 @@ void PixelDraw::DrawFilledSquare(int originX, int originY, int size, Color color
 
 void PixelDraw::DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int originY, Color colorToDraw) {
 
-  float timeDelta = GetFrameTime();
-  float time = 0.5f;
-  while(timeDelta < time){
-    int intermediateX = Lerp(prevOriginX, originX, timeDelta/time);
-    int intermediateY = Lerp(prevOriginY, originY, timeDelta/time);
-
-    if(curBrushShape == BrushShape::SquareBrush){
-      DrawFilledSquare(intermediateX, intermediateY, curToolSize, colorToDraw);
-    }
-    else{
-      DrawCircle(intermediateX, intermediateY, curToolSize, colorToDraw);
-    }
-
-    timeDelta += GetFrameTime();
-  }
+  /*float timeDelta = GetFrameTime();*/
+  /*float time = 0.5f;*/
+  /*while(timeDelta < time){*/
+  /*  int intermediateX = Lerp(prevOriginX, originX, timeDelta/time);*/
+  /*  int intermediateY = Lerp(prevOriginY, originY, timeDelta/time);*/
+  /**/
+  /*  if(curBrushShape == BrushShape::SquareBrush){*/
+  /*    DrawFilledSquare(intermediateX, intermediateY, curToolSize, colorToDraw);*/
+  /*  }*/
+  /*  else{*/
+  /*    DrawCircle(intermediateX, intermediateY, curToolSize, colorToDraw);*/
+  /*  }*/
+  /**/
+  /*  timeDelta += GetFrameTime();*/
+  /*}*/
+  DrawPixelBlock(originX, originY, colorToDraw);
 
 }
 
@@ -166,7 +204,7 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
     for(int width = x0 - curToolSize; width <= x0 + curToolSize; width++){
       for(int height = y0 - curToolSize; height <= y0 + curToolSize; height++){
         if(!IsOutsideOfCanvas(width, height)){
-          m_tmpCanvasPixels[(int)width + (int)height * m_canvasWidth] = curDrawingColor;
+          PixelDraw::DrawPixelBlock(width, height, curDrawingColor);
         }
       }
     }

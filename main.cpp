@@ -17,22 +17,6 @@
 
 using std::vector;
 
-bool operator==(Vector2 lhs, Vector2 rhs) {
-  return lhs.x == rhs.x && lhs.y == rhs.y;
-}
-
-Vector2 operator-(Vector2 lhs, Vector2 rhs){
-  return Vector2{rhs.x-lhs.x, rhs.y - lhs.y};
-}
-
-Vector2 operator*(Vector2 lhs, float rhs){
-  return Vector2{lhs.x*rhs, lhs.y*rhs};
-}
-Vector2 operator/(Vector2 lhs, float rhs){
-  return Vector2{lhs.x/rhs, lhs.y/rhs};
-}
-
-
 // temporary global logic
 float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
 bool g_isColorPickerPressed;
@@ -40,10 +24,11 @@ bool g_isColorPickerPressed;
 #define MAX_OUTPUT_FILE_SIZE 10
 char g_outputFileName[MAX_OUTPUT_FILE_SIZE];
 
-int g_screenWidth = 1280;
-int g_screenHeight = 960;
-int g_canvasWidth = 600;
-int g_canvasHeight = 600;
+int g_screenWidth = 1600;
+int g_screenHeight = 1200;
+int g_canvasWidth = 512;
+int g_canvasHeight = 512;
+int g_pixelBlockSize = g_canvasWidth/128;
 
 float g_canvasScale = 1.0f;
 
@@ -102,7 +87,7 @@ void AddCanvasToUndo(){
 }
 
 
-PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_tmpCanvasPixels, g_mainCanvasPixels);
+PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_tmpCanvasPixels, g_mainCanvasPixels);
 
 
 /*void InterpolateBrush(){*/
@@ -165,18 +150,17 @@ void UndoControl(){
 
 void SetTransparentTexture(){
   Color* transparentTexturePixels = new Color[g_canvasPixelsSize]; 
-  int blockSize = g_canvasWidth/30;
   int countX = 0;
   int countY = 0;
   bool isGray = true;
   for(int i = 0; i < g_canvasWidth; i++){
-    if(countX >= blockSize){
+    if(countX >= g_pixelBlockSize){
       isGray = !isGray;
       countX = 0;
     }
     countX++;
     for(int j = 0; j < g_canvasHeight; j++){
-      if(countY >= blockSize){
+      if(countY >= g_pixelBlockSize){
         isGray = !isGray;
         countY = 0;
       }
