@@ -165,22 +165,31 @@ void UndoControl(){
 
 void SetTransparentTexture(){
   Color* transparentTexturePixels = new Color[g_canvasPixelsSize]; 
-  int blockSize = 16;
-  int count = 0;
+  int blockSize = g_canvasWidth/30;
+  int countX = 0;
+  int countY = 0;
   bool isGray = true;
   for(int i = 0; i < g_canvasWidth; i++){
+    if(countX >= blockSize){
+      isGray = !isGray;
+      countX = 0;
+    }
+    countX++;
     for(int j = 0; j < g_canvasHeight; j++){
-      if(count >= blockSize){
+      if(countY >= blockSize){
         isGray = !isGray;
-        count = 0;
+        countY = 0;
       }
-      transparentTexturePixels[i+j*g_canvasWidth] = isGray ? GRAY : WHITE;
-      count++;
+      transparentTexturePixels[i+j*g_canvasWidth] = isGray ? GRAY : LIGHTGRAY;
+      countY++;
     }
   }
   UpdateTexture(g_transparentTexture,transparentTexturePixels);
 
 }
+
+
+
 
 
 void SetMousePosRelativeToCanvas(){
