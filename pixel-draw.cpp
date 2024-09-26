@@ -1,5 +1,6 @@
 #include "pixel-draw.h"
 #include "imgui/imgui.h"
+#include <raymath.h>
 
 
 bool operator==(Color lhs, Color rhs){
@@ -121,13 +122,22 @@ void PixelDraw::DrawFilledSquare(int originX, int originY, int size, Color color
 }
 
 
-void PixelDraw::DrawWithBrush(int originX, int originY, Color colorToDraw) {
+void PixelDraw::DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int originY, Color colorToDraw) {
 
-  if(curBrushShape == BrushShape::SquareBrush){
-    DrawFilledSquare(originX, originY, curToolSize, colorToDraw);
-  }
-  else{
-    DrawCircle(originX, originY, curToolSize, colorToDraw);
+  float timeDelta = GetFrameTime();
+  float time = 0.5f;
+  while(timeDelta < time){
+    int intermediateX = Lerp(prevOriginX, originX, timeDelta/time);
+    int intermediateY = Lerp(prevOriginY, originY, timeDelta/time);
+
+    if(curBrushShape == BrushShape::SquareBrush){
+      DrawFilledSquare(intermediateX, intermediateY, curToolSize, colorToDraw);
+    }
+    else{
+      DrawCircle(intermediateX, intermediateY, curToolSize, colorToDraw);
+    }
+
+    timeDelta += GetFrameTime();
   }
 
 }

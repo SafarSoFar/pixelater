@@ -45,7 +45,7 @@ class PixelDraw{
     void DrawFilledCircle(int originX, int originY, int radius, Color color);
     void DrawFilledSquare(int originX, int originY, 
     int size, Color color);
-    void DrawWithBrush(int originX, int originY, Color colorToDraw);
+    void DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int originY, Color colorToDraw);
     void DrawWithLine(float x0, float y0, float x1, float y1);
     void DrawWithRectangle();
     bool IsOutsideOfCanvas(int x, int y);

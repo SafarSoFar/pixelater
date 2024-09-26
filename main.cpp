@@ -28,6 +28,9 @@ Vector2 operator-(Vector2 lhs, Vector2 rhs){
 Vector2 operator*(Vector2 lhs, float rhs){
   return Vector2{lhs.x*rhs, lhs.y*rhs};
 }
+Vector2 operator/(Vector2 lhs, float rhs){
+  return Vector2{lhs.x/rhs, lhs.y/rhs};
+}
 
 
 // temporary global logic
@@ -102,15 +105,15 @@ void AddCanvasToUndo(){
 PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_tmpCanvasPixels, g_mainCanvasPixels);
 
 
-void InterpolateBrush(){
-  float timeDelta = GetFrameTime();
-  float time = 0.5f;
-  while(timeDelta < time){
-    Vector2 intermidiate = Vector2Lerp(g_prevLastMousePos, g_lastMousePos, timeDelta/time);
-    g_pixelDraw.DrawWithBrush(intermidiate.x, intermidiate.y, g_pixelDraw.curDrawingColor);
-    timeDelta += GetFrameTime();
-  }
-}
+/*void InterpolateBrush(){*/
+/*  float timeDelta = GetFrameTime();*/
+/*  float time = 0.5f;*/
+/*  while(timeDelta < time){*/
+/*    Vector2 intermidiate = Vector2Lerp(g_prevLastMousePos, g_lastMousePos, timeDelta/time);*/
+/*    g_pixelDraw.DrawWithBrush(intermidiate.x, intermidiate.y, g_pixelDraw.curDrawingColor);*/
+/*    timeDelta += GetFrameTime();*/
+/*  }*/
+/*}*/
 
 void Draw() {
   switch (g_pixelDraw.curTool) {  
@@ -118,12 +121,12 @@ void Draw() {
     g_pixelDraw.DrawWithLine(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y, g_lastMousePos.x, g_lastMousePos.y);
     break;
   case Brush:
-    InterpolateBrush();
+    g_pixelDraw.DrawWithBrush(g_prevLastMousePos.x, g_prevLastMousePos.y, g_lastMousePos.x, g_lastMousePos.y, g_pixelDraw.curDrawingColor);
   case Rect:
     g_pixelDraw.DrawWithRectangle();
     break;
   case Eraser:
-    g_pixelDraw.DrawWithBrush(g_lastMousePos.x, g_lastMousePos.y, WHITE);
+    g_pixelDraw.DrawWithBrush(g_prevLastMousePos.x, g_prevLastMousePos.y, g_lastMousePos.x, g_lastMousePos.y, WHITE);
     break;
   case Circle:
     // The first mouse position is the center, if user is holding left alt - don't delete intermidiate stepsinclude "IconsFontAwesome5.h"
@@ -187,11 +190,10 @@ void SetMousePosRelativeToCanvas(){
   Vector2 onWindowPos = GetMousePosition();
 
   if(g_isMouseDraggingCanvas){
-    g_lastMousePos = g_canvasPosBeforeDrag - onWindowPos;
+    g_lastMousePos = (g_canvasPosBeforeDrag - onWindowPos) / g_canvasScale;
     return;
   }
-
-  g_lastMousePos = g_canvasPos - onWindowPos;
+  g_lastMousePos = (g_canvasPos - onWindowPos) / g_canvasScale;
 }
 
 void ControlGUIHotKeys(){
