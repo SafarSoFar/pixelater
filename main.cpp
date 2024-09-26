@@ -66,6 +66,8 @@ bool g_isSaveWindowOpen = false;
 
 
 Vector2 g_LMBHoldingFirstPos = Vector2Zero();
+
+Vector2 g_prevLastMousePos = Vector2Zero();
 Vector2 g_lastMousePos = Vector2Zero();
 
 // The only way is to use std::array instead of C-arrays and convert them along the way
@@ -99,13 +101,24 @@ void AddCanvasToUndo(){
 
 PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_tmpCanvasPixels, g_mainCanvasPixels);
 
+
+void InterpolateBrush(){
+  float timeDelta = GetFrameTime();
+  float time = 0.5f;
+  while(timeDelta < time){
+    Vector2 intermidiate = Vector2Lerp(g_prevLastMousePos, g_lastMousePos, timeDelta/time);
+    g_pixelDraw.DrawWithBrush(intermidiate.x, intermidiate.y, g_pixelDraw.curDrawingColor);
+    timeDelta += GetFrameTime();
+  }
+}
+
 void Draw() {
   switch (g_pixelDraw.curTool) {  
   case Line:
     g_pixelDraw.DrawWithLine(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y, g_lastMousePos.x, g_lastMousePos.y);
     break;
   case Brush:
-    g_pixelDraw.DrawWithBrush(g_lastMousePos.x, g_lastMousePos.y, g_pixelDraw.curDrawingColor);
+    InterpolateBrush();
   case Rect:
     g_pixelDraw.DrawWithRectangle();
     break;
@@ -168,7 +181,11 @@ void SetTransparentTexture(){
 
 
 void SetMousePosRelativeToCanvas(){
+
+  g_prevLastMousePos = g_lastMousePos;
+
   Vector2 onWindowPos = GetMousePosition();
+
   if(g_isMouseDraggingCanvas){
     g_lastMousePos = g_canvasPosBeforeDrag - onWindowPos;
     return;
@@ -207,7 +224,7 @@ void ControlCanvasTransform(){
   }
   
   // TODO when clicking at the same spot, canvas can jump to two positions for whatever reason
-  if(g_isHoldingLMB && IsKeyDown(KEY_LEFT_ALT)){
+  if(g_isHoldingLMB && IsKeyDown(KEY_LEFT_SHIFT)){
     if(!g_isMouseDraggingCanvas){
       g_canvasPosBeforeDrag = g_canvasPos;
     }
@@ -238,6 +255,12 @@ void DrawAndControlGUI() {
       }
       ImGui::EndMenu();
     } 
+    if(ImGui::BeginMenu("Donate")){
+      if(ImGui::MenuItem("Patreon")){
+        OpenURL("https://www.patreon.com/SoFarDevelopment");
+      }
+      ImGui::EndMenu();
+    }
     ImGui::EndMenuBar();
   }
   ImGui::End(); // Functions panel
@@ -294,6 +317,7 @@ void DrawAndControlGUI() {
     g_pixelDraw.curTool = Tool::Line;
   }
   if (ImGui::Button(ICON_FA_PAINT_BRUSH " Brush")) {
+    
     g_pixelDraw.curTool = Tool::Brush;
   }
   if(ImGui::CollapsingHeader(ICON_FA_SHAPES " Brush Shapes")){
@@ -359,12 +383,12 @@ int main(void) {
   ImGuiIO& io = ImGui::GetIO(); (void)io;
 
   ImGuiStyle* style = &ImGui::GetStyle();
-  style->Colors[ImGuiCol_Border] = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+  style->Colors[ImGuiCol_Border] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
   style->Colors[ImGuiCol_Button] = ImVec4(0.0f,0.0f,0.0f,1.0f);
   style->Colors[ImGuiCol_Header] = ImVec4(0.0f,0.0f,0.0f,1.0f);
   style->Colors[ImGuiCol_FrameBg] = ImVec4(0.0f,0.0f,0.0f,1.0f);
   /*style->Colors[ImGuiCol_TitleBg] = ImVec4(0.0f,0.0f,0.0f,1.0f);*/
-  style->FrameBorderSize = 2;
+  /*style->FrameBorderSize = 1;*/
   style->FrameRounding = 3;
   style->ChildRounding = 3;
 
