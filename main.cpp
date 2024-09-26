@@ -62,8 +62,44 @@ Vector2 g_lastMousePos = Vector2Zero();
 // The only way is to use std::array instead of C-arrays and convert them along the way
 vector<vector<Color>> previousCanvasColorPixels;
 
+PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_tmpCanvasPixels, g_mainCanvasPixels);
 
+void CenterCanvasPos(){
+  g_canvasPos.x = g_screenWidth/2-(g_canvasWidth*g_canvasScale)/2;
+  g_canvasPos.y = g_screenHeight/2-(g_canvasHeight*g_canvasScale)/2;
+}
 
+void SetTransparentTexture(){
+  Color* transparentTexturePixels = new Color[g_canvasPixelsSize]; 
+  int countX = 0;
+  int countY = 0;
+  bool isGray = true;
+  for(int i = 0; i < g_canvasWidth; i++){
+    if(countX >= g_pixelBlockSize){
+      isGray = !isGray;
+      countX = 0;
+    }
+    countX++;
+    for(int j = 0; j < g_canvasHeight; j++){
+      if(countY >= g_pixelBlockSize){
+        isGray = !isGray;
+        countY = 0;
+      }
+      transparentTexturePixels[i+j*g_canvasWidth] = isGray ? GRAY : LIGHTGRAY;
+      countY++;
+    }
+  }
+  UpdateTexture(g_transparentTexture,transparentTexturePixels);
+
+}
+
+void CreateCanvas(int pixelSize){
+  g_pixelBlockSize = pixelSize;
+  g_pixelDraw = PixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_tmpCanvasPixels, g_mainCanvasPixels);
+  CenterCanvasPos();
+  g_pixelDraw.ClearPixels();
+  SetTransparentTexture();
+}
 
 
 void SavePixelArt(char fileName[10]){
@@ -88,7 +124,6 @@ void AddCanvasToUndo(){
 }
 
 
-PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_tmpCanvasPixels, g_mainCanvasPixels);
 
 
 /*void InterpolateBrush(){*/
@@ -149,29 +184,6 @@ void UndoControl(){
   }
 }
 
-void SetTransparentTexture(){
-  Color* transparentTexturePixels = new Color[g_canvasPixelsSize]; 
-  int countX = 0;
-  int countY = 0;
-  bool isGray = true;
-  for(int i = 0; i < g_canvasWidth; i++){
-    if(countX >= g_pixelBlockSize){
-      isGray = !isGray;
-      countX = 0;
-    }
-    countX++;
-    for(int j = 0; j < g_canvasHeight; j++){
-      if(countY >= g_pixelBlockSize){
-        isGray = !isGray;
-        countY = 0;
-      }
-      transparentTexturePixels[i+j*g_canvasWidth] = isGray ? GRAY : LIGHTGRAY;
-      countY++;
-    }
-  }
-  UpdateTexture(g_transparentTexture,transparentTexturePixels);
-
-}
 
 
 
@@ -198,10 +210,6 @@ void ControlGUIHotKeys(){
   }
 }
 
-void CenterCanvasPos(){
-  g_canvasPos.x = g_screenWidth/2-(g_canvasWidth*g_canvasScale)/2;
-  g_canvasPos.y = g_screenHeight/2-(g_canvasHeight*g_canvasScale)/2;
-}
 
 void ControlCanvasTransform(){
   /*if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)){*/
@@ -241,6 +249,8 @@ void ControlPopUpWindows(){
 
     if(ImGui::Button("Save to PNG")){
       SavePixelArt(g_outputFileName);
+      // Closing window after confirming
+      g_isSaveImageWindowOpen = false;
     }
 
     ImGui::End();
@@ -249,10 +259,47 @@ void ControlPopUpWindows(){
   if(g_isNewCanvasWindowOpen){
     ImGui::Begin("Canvas",&g_isNewCanvasWindowOpen);
 
-    ImGui::InputText("Enter the file name",  g_outputFileName, MAX_OUTPUT_FILE_SIZE);
+    /*ImGui::InputInt("Width", &g_canvasWidth, 0, 0);*/
+    /*ImGui::InputInt("Height", &g_canvasHeight, 0,0);*/
 
-    if(ImGui::Button("Save to PNG")){
-      SavePixelArt(g_outputFileName);
+    const char* items[] = {"4x4", "8x8", "16x16", "32x32", "64x64"};
+    static int selectedItemIndex = 0;
+
+    if(ImGui::BeginListBox("Pixel size")){
+      for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+      {
+        const bool is_selected = (selectedItemIndex == n);
+        if (ImGui::Selectable(items[n], is_selected))
+            selectedItemIndex = n;
+
+        // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+        if (is_selected)
+            ImGui::SetItemDefaultFocus();
+      }
+      ImGui::EndListBox();
+    }
+    auto v = items[selectedItemIndex];
+    if(ImGui::Button("Create Canvas")){
+      switch (selectedItemIndex){
+        case 0:
+          CreateCanvas(4);
+        break;
+        case 1:
+          CreateCanvas(8);
+        break;
+        case 2: 
+          CreateCanvas(16);
+        break;
+        case 3: 
+          CreateCanvas(32);
+        break;
+        case 4: 
+          CreateCanvas(64);
+        break;
+      }
+
+      // Closing window after confirming
+      g_isNewCanvasWindowOpen = false; 
     }
 
     ImGui::End();

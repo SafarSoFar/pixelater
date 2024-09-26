@@ -32,6 +32,9 @@ bool PixelDraw::IsOutsideOfCanvas(int x, int y){
 }
 
 PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Color tmpCanvasPixels[], Color mainCanvasPixels[]){
+  this->curDrawingColor = BLACK;
+  this->curTool = Tool::Brush;
+  this->curToolSize = 1;
   this->m_pixelBlockSize = pixelBlockSize;
   this->m_canvasWidth = screenWidth;
   this->m_canvasHeight = screenHeight;
