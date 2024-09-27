@@ -4,6 +4,7 @@
 #include "pixel-draw.h"
 #include "raylib.h"
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <cstring>
 #include "IconsFontAwesome5.h"
@@ -28,9 +29,11 @@ int g_screenWidth = 1280;
 int g_screenHeight = 900;
 int g_canvasWidth = 512;
 int g_canvasHeight = 512;
-int g_pixelBlockSize = g_canvasWidth/128;
+int g_pixelBlockSize = g_canvasWidth/32; // basic 32x32
 
 float g_canvasScale = 1.0f;
+float g_canvasScaleMin = 0.2f;
+float g_canvasScaleMax = 5.0f;
 
 Vector2 g_canvasPos;
 Vector2 g_canvasPosBeforeDrag;
@@ -47,6 +50,8 @@ Texture2D g_transparentTexture;
 ImFont* g_iconFont; 
 ImFont* g_textFont; 
 
+Font g_rlFontIcons;
+
 bool g_isHoldingLMB;
 bool g_isMouseDraggingCanvas = false;
 bool g_canInteractWithCanvas = true;
@@ -56,8 +61,11 @@ bool g_isNewCanvasWindowOpen = false;
 
 Vector2 g_LMBHoldingFirstPos = Vector2Zero();
 
-Vector2 g_prevLastMousePos = Vector2Zero();
+Vector2 g_secondLastMousePos = Vector2Zero();
 Vector2 g_lastMousePos = Vector2Zero();
+
+Vector2 g_secondLastMousePosOnCanvas = Vector2Zero();
+Vector2 g_lastMousePosOnCanvas = Vector2Zero();
 
 // The only way is to use std::array instead of C-arrays and convert them along the way
 vector<vector<Color>> previousCanvasColorPixels;
@@ -139,30 +147,30 @@ void AddCanvasToUndo(){
 void Draw() {
   switch (g_pixelDraw.curTool) {  
   case Line:
-    g_pixelDraw.DrawWithLine(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y, g_lastMousePos.x, g_lastMousePos.y);
+    g_pixelDraw.DrawWithLine(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
     break;
   case Brush:
-    g_pixelDraw.DrawWithBrush(g_prevLastMousePos.x, g_prevLastMousePos.y, g_lastMousePos.x, g_lastMousePos.y);
+    g_pixelDraw.DrawWithBrush(g_secondLastMousePosOnCanvas.x, g_secondLastMousePosOnCanvas.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
   case Rect:
     g_pixelDraw.DrawWithRectangle();
     break;
   case Eraser:
-    g_pixelDraw.Erase(g_lastMousePos.x, g_lastMousePos.y);
+    g_pixelDraw.Erase(g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
     break;
   case Circle:
     // The first mouse position is the center, if user is holding left alt - don't delete intermidiate stepsinclude "IconsFontAwesome5.h"
     if(IsKeyDown(KEY_LEFT_CONTROL)){
       g_pixelDraw.DrawCenteredCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
-          g_lastMousePos.x, g_lastMousePos.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
+          g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
     }
     // Center is calculated as the midpoint of two mouse vectors, if user is holding left alt - don't delete intermidiate steps
     else{
       g_pixelDraw.DrawAndStretchCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
-          g_lastMousePos.x, g_lastMousePos.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
+          g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
     }
     break;
   case Fill:
-    g_pixelDraw.FillWithColor(g_lastMousePos.x, g_lastMousePos.y, g_pixelDraw.curDrawingColor);
+    g_pixelDraw.FillWithColor(g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor);
     break;
   }
   UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
@@ -184,22 +192,31 @@ void UndoControl(){
   }
 }
 
+// Doesn't work yet
+/*void ControlCursor(){*/
+
+  /*DrawTextCodepoint(g_rlFontIcons, 0xf2c0, g_lastMousePos, 20, BLACK);*/
+  /*DrawTextCodepoint(Font font, int codepoint, Vector2 position, float fontSize, Color tint)*/
+
+  /*std::cout<<" : " ICON_FA_BRUSH<<'\n';*/
+
+  /*DrawTextCodepoint(g_rlFontIcons, 0xf6ac, g_lastMousePos, 20, BLACK);*/
+/*}*/
 
 
 
+void SetMousePositions(){
 
+  g_secondLastMousePos = g_lastMousePos;
+  g_secondLastMousePosOnCanvas = g_lastMousePosOnCanvas;
 
-void SetMousePosRelativeToCanvas(){
-
-  g_prevLastMousePos = g_lastMousePos;
-
-  Vector2 onWindowPos = GetMousePosition();
+  g_lastMousePos = GetMousePosition();
 
   if(g_isMouseDraggingCanvas){
-    g_lastMousePos = (g_canvasPosBeforeDrag - onWindowPos) / g_canvasScale;
+    g_lastMousePosOnCanvas = (g_canvasPosBeforeDrag - g_lastMousePos) / g_canvasScale;
     return;
   }
-  g_lastMousePos = (g_canvasPos - onWindowPos) / g_canvasScale;
+  g_lastMousePosOnCanvas = (g_canvasPos - g_lastMousePos) / g_canvasScale;
 }
 
 void ControlGUIHotKeys(){
@@ -212,18 +229,30 @@ void ControlGUIHotKeys(){
 
 
 void ControlCanvasTransform(){
-  /*if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)){*/
-  /**/
-  /*}*/
+
+  Vector2 mouseWheel = GetMouseWheelMoveV();
+  /*std::cout<<mouseWheel.x<<" X "<<'\n';*/
+  /*std::cout<<mouseWheel.y<<" Y "<<'\n';*/
 
   if(IsKeyDown(KEY_LEFT_CONTROL)){
-    if(IsKeyPressed(KEY_EQUAL)){
+
+    if(IsKeyPressed(KEY_EQUAL) || mouseWheel.y > 0.1f){
+      if(g_canvasScale+0.2f > g_canvasScaleMax){
+        return;
+      }
       g_canvasScale += 0.2f;
       CenterCanvasPos();
+
     }
-    else if(IsKeyPressed(KEY_MINUS)){
+    else if(IsKeyPressed(KEY_MINUS) || mouseWheel.y < -0.1f){
+
+      if(g_canvasScale-0.2f < g_canvasScaleMin){
+        return;
+      }
+
       g_canvasScale -= 0.2f;
       CenterCanvasPos();
+
     }
   }
   
@@ -233,7 +262,7 @@ void ControlCanvasTransform(){
       g_canvasPosBeforeDrag = g_canvasPos;
     }
     g_isMouseDraggingCanvas = true;
-    Vector2 differenceVector = g_LMBHoldingFirstPos - g_lastMousePos; 
+    Vector2 differenceVector = g_LMBHoldingFirstPos - g_lastMousePosOnCanvas; 
     g_canvasPos = g_canvasPosBeforeDrag-differenceVector;
   }
   else if(!g_isHoldingLMB && g_isMouseDraggingCanvas){
@@ -432,27 +461,7 @@ void DrawAndControlGUI() {
 }
 
 
-
-// buggy
-/*void DrawSizeCursor(){*/
-/*  DrawCircleLines(g_lastMousePos.x, g_lastMousePos.y, g_brushSize, BLACK);*/
-/*}*/
-
-//------------------------------------------------------------------------------------
-// Program main entry point
-//------------------------------------------------------------------------------------
-int main(void) {
-  // Initialization
-  //--------------------------------------------------------------------------------------
-
-  /*SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI);*/
-  InitWindow(g_screenWidth, g_screenHeight, "Pixel Editor");
-
-  CenterCanvasPos();
-
-  ImGui::CreateContext();
-  ImGuiIO& io = ImGui::GetIO(); (void)io;
-
+void SetupStyles(ImGuiIO io){
   ImGuiStyle* style = &ImGui::GetStyle();
   style->Colors[ImGuiCol_Border] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
   style->Colors[ImGuiCol_Button] = ImVec4(0.0f,0.0f,0.0f,1.0f);
@@ -480,14 +489,44 @@ int main(void) {
 
   g_iconFont = io.Fonts->AddFontFromFileTTF( "fonts/" FONT_ICON_FILE_NAME_FAS, iconFontSize, &icons_config, icons_ranges );
   g_textFont = io.Fonts->AddFontFromFileTTF( "fonts/louis-george-cafe.ttf", 20);
+  int codepoints[2] = {0xf2b9, 0xf6ad};
+  g_rlFontIcons = LoadFontEx("fonts/" FONT_ICON_FILE_NAME_FAS, iconFontSize, codepoints, 2);
   io.Fonts->Build();
 
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
   /*ImGui::StyleColorsDark();*/
 
+  /*Font rlFontIcons = LoadFontEx("fonts/" FONT_ICON_FILE_NAME_FAS, iconFontSize, ICON_MIN_FA, ICON_MAX_16_FA);*/
+
   ImGui_ImplRaylib_Init();
   Imgui_ImplRaylib_BuildFontAtlas();
+
+}
+
+
+// buggy
+/*void DrawSizeCursor(){*/
+/*  DrawCircleLines(g_lastMousePos.x, g_lastMousePos.y, g_brushSize, BLACK);*/
+/*}*/
+
+//------------------------------------------------------------------------------------
+// Program main entry point
+//------------------------------------------------------------------------------------
+int main(void) {
+  // Initialization
+  //--------------------------------------------------------------------------------------
+
+  /*SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI);*/
+  InitWindow(g_screenWidth, g_screenHeight, "Pixel Editor");
+
+  CenterCanvasPos();
+
+  ImGui::CreateContext();
+
+  ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+  SetupStyles(io);
 
   g_pixelDraw.ClearPixels();
 
@@ -502,7 +541,6 @@ int main(void) {
 
   /*ToggleFullscreen();*/
   SetTargetFPS(60); // Set our game to run at 60 frames-per-second
-
 
 
 
@@ -531,9 +569,9 @@ int main(void) {
 
     ControlGUIHotKeys();
 
+    /*ControlCursor();*/
 
-
-    SetMousePosRelativeToCanvas();
+    SetMousePositions();
     ControlCanvasTransform();
 
     UndoControl();
@@ -546,7 +584,7 @@ int main(void) {
 
       if (!g_isHoldingLMB) {
         g_isHoldingLMB = true;
-        g_LMBHoldingFirstPos = g_lastMousePos;
+        g_LMBHoldingFirstPos = g_lastMousePosOnCanvas;
       }
 
       DrawTextureEx(g_tmpCanvasTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
