@@ -101,12 +101,17 @@ void PixelDraw::ControlPixelDraw(int drawPosX, int drawPosY, Color color){
   drawPosY -= drawPosY % m_pixelBlockSize;
 
   DrawPixelBlock(drawPosX, drawPosY,  color,false);
+
   if(xAxisMirror){
     DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-drawPosX, drawPosY, color, true);
   }
-  /*if(yAxisMirror){*/
-  /*  DrawPixelBlock(drawPosX, m_canvasHeight-drawPoY, color, true);*/
-  /*}*/
+
+  if(yAxisMirror){
+    DrawPixelBlock(drawPosX, m_canvasHeight-m_pixelBlockSize-drawPosY, color, true);
+    if(xAxisMirror){
+      DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-drawPosX, m_canvasHeight-m_pixelBlockSize-drawPosY, color, true);
+    }
+  }
 }
 
 void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color, bool isMirrored){

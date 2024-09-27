@@ -44,7 +44,7 @@ class PixelDraw{
     int curToolSize = 1;
     Color curDrawingColor = BLACK;
     bool xAxisMirror = true;
-    bool yAxisMirror = false;
+    bool yAxisMirror = true;
 
     PixelDraw(int canvasWidth, int canvasHeight, int pixelBlockSize, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
     void ClearPixels(); 

@@ -437,7 +437,12 @@ void DrawAndControlGUI() {
   if (ImGui::Button(ICON_FA_FILL " Fill")) {
     g_pixelDraw.curTool = Tool::Fill;
   }
+  ImGui::Checkbox("Mirror X Axis", &g_pixelDraw.xAxisMirror);
+  ImGui::Checkbox("Mirror Y Axis", &g_pixelDraw.yAxisMirror);
+
   ImGui::End();
+
+
   bool isScrollbarsOpen = true;
 
   /*-----HORIZONTAL VIEW SCROLLBAR--------*/
