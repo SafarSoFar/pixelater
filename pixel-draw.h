@@ -43,6 +43,8 @@ class PixelDraw{
     BrushShape curBrushShape;
     int curToolSize = 1;
     Color curDrawingColor = BLACK;
+    bool xAxisMirror = true;
+    bool yAxisMirror = false;
 
     PixelDraw(int canvasWidth, int canvasHeight, int pixelBlockSize, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
     void ClearPixels(); 
@@ -53,7 +55,8 @@ class PixelDraw{
     void DrawFilledCircle(int originX, int originY, int radius);
     void DrawFilledSquare(int originX, int originY, 
     int size, Color color);
-    void DrawPixelBlock(int drawPosX, int drawPosY, Color color);
+    void ControlPixelDraw(int drawPosX, int drawPosY, Color color);
+    void DrawPixelBlock(int drawPosX, int drawPosY, Color color, bool isMirrored);
     void Erase(int originX, int drawPosY);
     void DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int originY);
     void DrawWithLine(float x0, float y0, float x1, float y1);
@@ -64,6 +67,8 @@ class PixelDraw{
   private:
     bool m_isFillingCanvas = false;
     int m_pixelBlockSize;
+    int m_canvasPixelAmountX;
+    int m_canvasPixelAmountY;
     int m_canvasWidth;
     int m_canvasHeight;
     int m_pixelsSize;

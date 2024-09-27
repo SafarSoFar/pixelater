@@ -36,9 +36,15 @@ PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Colo
   this->curTool = Tool::Brush;
   this->curToolSize = 1;
   this->m_pixelBlockSize = pixelBlockSize;
+
   this->m_canvasWidth = screenWidth;
   this->m_canvasHeight = screenHeight;
+
+  this->m_canvasPixelAmountX = m_canvasWidth/m_pixelBlockSize;
+  this->m_canvasPixelAmountY = m_canvasHeight/m_pixelBlockSize;
+
   this->m_pixelsSize = screenWidth * screenHeight;
+
   this->m_tmpCanvasPixels = tmpCanvasPixels;
   this->m_mainCanvasPixels = mainCanvasPixels;
 }
@@ -85,28 +91,36 @@ void PixelDraw::DrawCircle(int originX, int originY, int radius){
       continue;
     }
 
-    PixelDraw::DrawPixelBlock(x0, y0, curDrawingColor);
+    PixelDraw::ControlPixelDraw(x0, y0, curDrawingColor); 
   }
 }
 
-void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color){
-  /*drawPosX = (float)drawPosX/(m_canvasWidth) * m_pixelBlockSize;*/
-  /*drawPosY = (float)drawPosY/(m_canvasHeight) * m_pixelBlockSize;*/
-  /*drawPosX *= 32;*/
-  /*drawPosY *= 32;*/
+void PixelDraw::ControlPixelDraw(int drawPosX, int drawPosY, Color color){
+
+  drawPosX -= drawPosX % m_pixelBlockSize;
+  drawPosY -= drawPosY % m_pixelBlockSize;
+
+  DrawPixelBlock(drawPosX, drawPosY,  color,false);
+  if(xAxisMirror){
+    DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-drawPosX, drawPosY, color, true);
+  }
+  /*if(yAxisMirror){*/
+  /*  DrawPixelBlock(drawPosX, m_canvasHeight-drawPoY, color, true);*/
+  /*}*/
+}
+
+void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color, bool isMirrored){
+
   if(IsOutsideOfCanvas(drawPosX, drawPosY)){
     return;
   }
 
-  drawPosX -= drawPosX % m_pixelBlockSize;
-  drawPosY -= drawPosY % m_pixelBlockSize;
-  for(int i = drawPosX; i < m_canvasWidth && i <= drawPosX+m_pixelBlockSize; i++){
-    for(int j = drawPosY; j < m_canvasHeight && j <= drawPosY+m_pixelBlockSize; j++){
+  for(int i = drawPosX; i < m_canvasWidth && i < drawPosX+m_pixelBlockSize; i++){
+    for(int j = drawPosY; j < m_canvasHeight && j < drawPosY+m_pixelBlockSize; j++){
       m_tmpCanvasPixels[i + j * m_canvasWidth] = color;
     }
   }
   
-  /*m_tmpCanvasPixels[drawPosX + drawPosY * m_canvasWidth] = color;*/
 }
 
 void PixelDraw::ClearPixels() {
@@ -166,7 +180,7 @@ void PixelDraw::DrawFilledSquare(int originX, int originY, int size, Color color
 }
 
 void PixelDraw::Erase(int drawPosX, int drawPosY){
-  PixelDraw::DrawPixelBlock(drawPosX, drawPosY, BLANK);
+  PixelDraw::ControlPixelDraw(drawPosX, drawPosY, BLANK);
 }
 
 void PixelDraw::DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int originY) {
@@ -184,7 +198,7 @@ void PixelDraw::DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int
     /*  DrawCircle(intermediateX, intermediateY, curToolSize, colorToDraw);*/
     /*}*/
 
-    DrawPixelBlock(intermediateX, intermediateY, curDrawingColor);
+    ControlPixelDraw(intermediateX, intermediateY, curDrawingColor);
 
     timeDelta += GetFrameTime();
   }
@@ -215,7 +229,7 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
     for(int width = x0 - curToolSize; width <= x0 + curToolSize; width++){
       for(int height = y0 - curToolSize; height <= y0 + curToolSize; height++){
         if(!IsOutsideOfCanvas(width, height)){
-          PixelDraw::DrawPixelBlock(width, height, curDrawingColor);
+          PixelDraw::ControlPixelDraw(width, height, curDrawingColor);
         }
       }
     }
