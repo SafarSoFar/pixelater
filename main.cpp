@@ -262,7 +262,7 @@ void ControlPopUpWindows(){
     /*ImGui::InputInt("Width", &g_canvasWidth, 0, 0);*/
     /*ImGui::InputInt("Height", &g_canvasHeight, 0,0);*/
 
-    const char* items[] = {"4x4", "8x8", "16x16", "32x32", "64x64"};
+    const char* items[] = {"8x8", "16x16", "32x32", "64x64", "128x128", "256x256"};
     static int selectedItemIndex = 0;
 
     if(ImGui::BeginListBox("Pixel size")){
@@ -282,19 +282,22 @@ void ControlPopUpWindows(){
     if(ImGui::Button("Create Canvas")){
       switch (selectedItemIndex){
         case 0:
-          CreateCanvas(4);
+          CreateCanvas(g_canvasWidth/8);
         break;
         case 1:
-          CreateCanvas(8);
+          CreateCanvas(g_canvasWidth/16);
         break;
         case 2: 
-          CreateCanvas(16);
+          CreateCanvas(g_canvasWidth/32);
         break;
         case 3: 
-          CreateCanvas(32);
+          CreateCanvas(g_canvasWidth/64);
         break;
         case 4: 
-          CreateCanvas(64);
+          CreateCanvas(g_canvasWidth/128);
+        break;
+        case 5: 
+          CreateCanvas(g_canvasWidth/256);
         break;
       }
 
