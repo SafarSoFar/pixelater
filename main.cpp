@@ -107,6 +107,8 @@ void CreateCanvas(int pixelSize){
   CenterCanvasPos();
   g_pixelDraw.ClearPixels();
   SetTransparentTexture();
+  g_undoCanvasColorPixels.clear();
+  g_redoCanvasColorPixels.clear();
 }
 
 
@@ -216,6 +218,9 @@ void StepsControl(){
     // If Left Shift is down - will not go to undo
     if(IsKeyDown(KEY_LEFT_SHIFT)){
       if(g_redoCanvasColorPixels.size()){
+
+        // Adding current canvas to undo
+        AddCanvasToUndo(); 
 
         auto step = g_redoCanvasColorPixels.back();
         g_redoCanvasColorPixels.pop_back();
