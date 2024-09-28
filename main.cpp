@@ -67,8 +67,8 @@ Vector2 g_lastMousePos = Vector2Zero();
 Vector2 g_secondLastMousePosOnCanvas = Vector2Zero();
 Vector2 g_lastMousePosOnCanvas = Vector2Zero();
 
-// The only way is to use std::array instead of C-arrays and convert them along the way
-vector<vector<Color>> previousCanvasColorPixels;
+vector<vector<Color>> g_undoCanvasColorPixels;
+vector<vector<Color>> g_redoCanvasColorPixels;
 
 PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_tmpCanvasPixels, g_mainCanvasPixels);
 
@@ -123,11 +123,11 @@ void AddCanvasToUndo(){
     /*memcpy(prevArr, &g_mainCanvasPixels, g_pixelsSize * sizeof(Color));*/
 
     // delete the limited step undo
-    if(previousCanvasColorPixels.size() >= 30){
-      previousCanvasColorPixels.erase(previousCanvasColorPixels.begin());
+    if(g_undoCanvasColorPixels.size() >= 30){
+      g_undoCanvasColorPixels.erase(g_undoCanvasColorPixels.begin());
     }
 
-    previousCanvasColorPixels.push_back(prevArr);
+    g_undoCanvasColorPixels.push_back(prevArr);
 
 }
 
@@ -195,19 +195,59 @@ void Draw() {
   UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
 }
 
-void UndoControl(){
-  if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z) && previousCanvasColorPixels.size()){
+void AddCanvasToRedo(){
+    vector<Color> curArr(g_mainCanvasPixels, g_mainCanvasPixels+g_canvasPixelsSize);
 
-    auto prev = previousCanvasColorPixels.back();
-    previousCanvasColorPixels.pop_back();
+    // Copying C-array content to std::array 
+    /*copy(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize, prevArr.begin());*/
+    /*memcpy(prevArr, &g_mainCanvasPixels, g_pixelsSize * sizeof(Color));*/
 
-    memcpy(g_mainCanvasPixels, prev.data(), g_canvasPixelsSize * sizeof(Color));
-    /*memcpy(g_mainCanvasPixels, prev, g_pixelsSize * sizeof(Color));*/
+    // delete the limited step undo
+    if(g_redoCanvasColorPixels.size() >= 30){
+      g_redoCanvasColorPixels.erase(g_undoCanvasColorPixels.begin());
+    }
 
-    memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));
+    g_redoCanvasColorPixels.push_back(curArr);
+}
 
-    UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
-    UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
+void StepsControl(){
+  if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z)){
+
+    // If Left Shift is down - will not go to undo
+    if(IsKeyDown(KEY_LEFT_SHIFT)){
+      if(g_redoCanvasColorPixels.size()){
+
+        auto step = g_redoCanvasColorPixels.back();
+        g_redoCanvasColorPixels.pop_back();
+
+        memcpy(g_mainCanvasPixels, step.data(), g_canvasPixelsSize * sizeof(Color));
+        /*memcpy(g_mainCanvasPixels, prev, g_pixelsSize * sizeof(Color));*/
+
+        memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));
+
+        UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
+        UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
+        
+      }
+
+      return;
+    }
+
+    if(g_undoCanvasColorPixels.size()){
+      // Adding current canvas to redo
+      AddCanvasToRedo(); 
+
+      auto prevStep = g_undoCanvasColorPixels.back();
+      g_undoCanvasColorPixels.pop_back();
+
+      memcpy(g_mainCanvasPixels, prevStep.data(), g_canvasPixelsSize * sizeof(Color));
+      /*memcpy(g_mainCanvasPixels, prev, g_pixelsSize * sizeof(Color));*/
+
+      memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));
+
+      UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
+      UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
+    }
   }
 }
 
@@ -601,7 +641,7 @@ int main(void) {
     SetMousePositions();
     ControlCanvasTransform();
 
-    UndoControl();
+    StepsControl();
 
     /*DrawSizeCursor();*/
 
