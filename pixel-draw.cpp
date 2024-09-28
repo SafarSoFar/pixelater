@@ -49,6 +49,12 @@ PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Colo
   this->m_mainCanvasPixels = mainCanvasPixels;
 }
 
+void PixelDraw::SetColorFromPos(int originX, int originY){
+  Color pickedColor = m_mainCanvasPixels[originX + originY * m_canvasWidth];
+  this->curDrawingColor = pickedColor;
+
+}
+
 void PixelDraw::DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color, bool spawnMultipleInstances){
   int midX = abs(x1+x0)/2;
   int midY = abs(y1+y0)/2;
@@ -100,6 +106,7 @@ void PixelDraw::ControlPixelDraw(int drawPosX, int drawPosY, Color color){
   drawPosX -= drawPosX % m_pixelBlockSize;
   drawPosY -= drawPosY % m_pixelBlockSize;
 
+  
   DrawPixelBlock(drawPosX, drawPosY,  color,false);
 
   if(xAxisMirror){
@@ -119,7 +126,7 @@ void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color, bool isM
   if(IsOutsideOfCanvas(drawPosX, drawPosY)){
     return;
   }
-
+  
   for(int i = drawPosX; i < m_canvasWidth && i < drawPosX+m_pixelBlockSize; i++){
     for(int j = drawPosY; j < m_canvasHeight && j < drawPosY+m_pixelBlockSize; j++){
       m_tmpCanvasPixels[i + j * m_canvasWidth] = color;

@@ -17,6 +17,7 @@ enum Tool {
   Line,
   Rect,
   Eraser,
+  ColorPicker,
   Circle,
   Fill
 };
@@ -43,8 +44,8 @@ class PixelDraw{
     BrushShape curBrushShape;
     int curToolSize = 1;
     Color curDrawingColor = BLACK;
-    bool xAxisMirror = true;
-    bool yAxisMirror = true;
+    bool xAxisMirror = false;
+    bool yAxisMirror = false;
 
     PixelDraw(int canvasWidth, int canvasHeight, int pixelBlockSize, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
     void ClearPixels(); 
@@ -61,6 +62,7 @@ class PixelDraw{
     void DrawWithBrush(int prevOriginX, int prevOriginY, int originX, int originY);
     void DrawWithLine(float x0, float y0, float x1, float y1);
     void DrawWithRectangle();
+    void SetColorFromPos(int originX, int originY);
     bool IsOutsideOfCanvas(int x, int y);
     void Draw();
 

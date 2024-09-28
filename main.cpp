@@ -146,31 +146,50 @@ void AddCanvasToUndo(){
 
 void Draw() {
   switch (g_pixelDraw.curTool) {  
-  case Line:
-    g_pixelDraw.DrawWithLine(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
+
+    case Line:
+      g_pixelDraw.DrawWithLine(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
     break;
-  case Brush:
-    g_pixelDraw.DrawWithBrush(g_secondLastMousePosOnCanvas.x, g_secondLastMousePosOnCanvas.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
-  case Rect:
-    g_pixelDraw.DrawWithRectangle();
+
+    case Brush:
+      g_pixelDraw.DrawWithBrush(g_secondLastMousePosOnCanvas.x, g_secondLastMousePosOnCanvas.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
+
+    case Rect:
+      g_pixelDraw.DrawWithRectangle();
     break;
-  case Eraser:
-    g_pixelDraw.Erase(g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
+
+    case Eraser:
+      g_pixelDraw.Erase(g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
     break;
-  case Circle:
-    // The first mouse position is the center, if user is holding left alt - don't delete intermidiate stepsinclude "IconsFontAwesome5.h"
-    if(IsKeyDown(KEY_LEFT_CONTROL)){
-      g_pixelDraw.DrawCenteredCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
-          g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
-    }
-    // Center is calculated as the midpoint of two mouse vectors, if user is holding left alt - don't delete intermidiate steps
-    else{
-      g_pixelDraw.DrawAndStretchCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
-          g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
-    }
+
+    case Circle:
+
+      // The first mouse position is the center, if user is holding left alt - don't delete intermidiate stepsinclude "IconsFontAwesome5.h"
+      if(IsKeyDown(KEY_LEFT_CONTROL)){
+        g_pixelDraw.DrawCenteredCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
+            g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
+      }
+      // Center is calculated as the midpoint of two mouse vectors, if user is holding left alt - don't delete intermidiate steps
+      else{
+        g_pixelDraw.DrawAndStretchCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
+            g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
+      }
     break;
-  case Fill:
-    g_pixelDraw.FillWithColor(g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor);
+
+    case ColorPicker:
+    // Changes tool raylib color
+    g_pixelDraw.SetColorFromPos(g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
+
+    // To change imgui color
+    g_imGuiColorFloat[0] = {g_pixelDraw.curDrawingColor.r/255.0f};
+    g_imGuiColorFloat[1] = {g_pixelDraw.curDrawingColor.g/255.0f};
+    g_imGuiColorFloat[2] = {g_pixelDraw.curDrawingColor.b/255.0f};
+    g_imGuiColorFloat[3] = {g_pixelDraw.curDrawingColor.a/255.0f};
+
+    break;
+
+    case Fill:
+      g_pixelDraw.FillWithColor(g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor);
     break;
   }
   UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
@@ -389,7 +408,7 @@ void DrawAndControlGUI() {
     UpdateTexture(g_tmpCanvasTexture, g_mainCanvasPixels);
   }
 
-  ImGui::SliderInt("Tool Size", &g_pixelDraw.curToolSize, 1, 20);
+  ImGui::SliderInt("Tool Size", &g_pixelDraw.curToolSize, 1, 5);
 
   ImGui::PopFont();
 
@@ -430,6 +449,9 @@ void DrawAndControlGUI() {
   }
   if (ImGui::Button(ICON_FA_ERASER " Eraser")) {
     g_pixelDraw.curTool = Tool::Eraser;
+  }
+  if (ImGui::Button(ICON_FA_EYE_DROPPER "Color Picker")) {
+    g_pixelDraw.curTool = Tool::ColorPicker;
   }
   if (ImGui::Button(ICON_FA_CIRCLE " Circle")) {
     g_pixelDraw.curTool = Tool::Circle;
@@ -523,7 +545,7 @@ int main(void) {
   //--------------------------------------------------------------------------------------
 
   /*SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI);*/
-  InitWindow(g_screenWidth, g_screenHeight, "Pixel Editor");
+  InitWindow(g_screenWidth, g_screenHeight, "Pixelater");
 
   CenterCanvasPos();
 
