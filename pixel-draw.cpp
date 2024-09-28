@@ -55,7 +55,47 @@ void PixelDraw::SetColorFromPos(int originX, int originY){
 
 }
 
-void PixelDraw::DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color, bool spawnMultipleInstances){
+void PixelDraw::DrawRectangle(int x0, int y0, int x1, int y1){
+
+  PixelDraw::ResetTMPBuffer();
+
+  float firstPointX;
+  float secondPointX;
+
+  float firstPointY;
+  float secondPointY;
+  
+  if(x0 <= x1){
+    firstPointX = x0;
+    secondPointX = x1;
+  }
+  else{
+    firstPointX = x1;
+    secondPointX = x0;
+  }
+
+  if(y0 <= y1){
+    firstPointY = y0;
+    secondPointY = y1;
+  }
+  else{
+    firstPointY = y1;
+    secondPointY = y0;
+  }
+
+  for(int i = firstPointX; i <= secondPointX; i++){
+    PixelDraw::ControlPixelDraw(i, y0, curDrawingColor);
+    PixelDraw::ControlPixelDraw(i, y1, curDrawingColor);
+  }
+  for(int i = firstPointY; i <= secondPointY; i++){
+    PixelDraw::ControlPixelDraw(x0, i, curDrawingColor);
+    PixelDraw::ControlPixelDraw(x1, i, curDrawingColor);
+  }
+  
+  
+}
+
+void PixelDraw::DrawAndStretchCircle(int x0, int y0, int x1, int y1, bool spawnMultipleInstances){
   int midX = abs(x1+x0)/2;
   int midY = abs(y1+y0)/2;
   if(!spawnMultipleInstances){
@@ -68,7 +108,7 @@ void PixelDraw::DrawAndStretchCircle(int x0, int y0, int x1, int y1, Color color
   }
 }
 
-void PixelDraw::DrawCenteredCircle(int centerX, int centerY, int radiusX, int radiusY, Color color, bool spawnMultipleInstances){
+void PixelDraw::DrawCenteredCircle(int centerX, int centerY, int radiusX, int radiusY, bool spawnMultipleInstances){
   
   int radius = sqrt(pow(radiusX - centerX,2) + pow(radiusY - centerY,2));
   if(!spawnMultipleInstances){
@@ -107,21 +147,21 @@ void PixelDraw::ControlPixelDraw(int drawPosX, int drawPosY, Color color){
   drawPosY -= drawPosY % m_pixelBlockSize;
 
   
-  DrawPixelBlock(drawPosX, drawPosY,  color,false);
+  DrawPixelBlock(drawPosX, drawPosY,  color);
 
   if(xAxisMirror){
-    DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-drawPosX, drawPosY, color, true);
+    DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-drawPosX, drawPosY, color);
   }
 
   if(yAxisMirror){
-    DrawPixelBlock(drawPosX, m_canvasHeight-m_pixelBlockSize-drawPosY, color, true);
+    DrawPixelBlock(drawPosX, m_canvasHeight-m_pixelBlockSize-drawPosY, color);
     if(xAxisMirror){
-      DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-drawPosX, m_canvasHeight-m_pixelBlockSize-drawPosY, color, true);
+      DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-drawPosX, m_canvasHeight-m_pixelBlockSize-drawPosY, color);
     }
   }
 }
 
-void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color, bool isMirrored){
+void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color){
 
   if(IsOutsideOfCanvas(drawPosX, drawPosY)){
     return;
@@ -257,8 +297,6 @@ void PixelDraw::ResetTMPBuffer(){
   memcpy(m_tmpCanvasPixels, m_mainCanvasPixels, m_pixelsSize * sizeof(Color));
 }
 
-
-void PixelDraw::DrawWithRectangle() {}
 
 
 

@@ -155,9 +155,10 @@ void Draw() {
 
     case Brush:
       g_pixelDraw.DrawWithBrush(g_secondLastMousePosOnCanvas.x, g_secondLastMousePosOnCanvas.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
+    break;
 
     case Rect:
-      g_pixelDraw.DrawWithRectangle();
+      g_pixelDraw.DrawRectangle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
     break;
 
     case Eraser:
@@ -169,12 +170,12 @@ void Draw() {
       // The first mouse position is the center, if user is holding left alt - don't delete intermidiate stepsinclude "IconsFontAwesome5.h"
       if(IsKeyDown(KEY_LEFT_CONTROL)){
         g_pixelDraw.DrawCenteredCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
-            g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
+            g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, IsKeyDown(KEY_LEFT_ALT));
       }
       // Center is calculated as the midpoint of two mouse vectors, if user is holding left alt - don't delete intermidiate steps
       else{
         g_pixelDraw.DrawAndStretchCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
-            g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor, IsKeyDown(KEY_LEFT_ALT));
+            g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, IsKeyDown(KEY_LEFT_ALT));
       }
     break;
 
@@ -481,7 +482,6 @@ void DrawAndControlGUI() {
     g_pixelDraw.curTool = Tool::Line;
   }
   if (ImGui::Button(ICON_FA_PAINT_BRUSH " Brush")) {
-    
     g_pixelDraw.curTool = Tool::Brush;
   }
   if(ImGui::CollapsingHeader(ICON_FA_SHAPES " Brush Shapes")){
@@ -503,6 +503,9 @@ void DrawAndControlGUI() {
   }
   if (ImGui::Button(ICON_FA_FILL " Fill")) {
     g_pixelDraw.curTool = Tool::Fill;
+  }
+  if (ImGui::Button( " Rectangle")){
+    g_pixelDraw.curTool = Tool::Rect;
   }
   ImGui::Checkbox("Mirror X Axis", &g_pixelDraw.xAxisMirror);
   ImGui::Checkbox("Mirror Y Axis", &g_pixelDraw.yAxisMirror);
@@ -678,10 +681,12 @@ int main(void) {
 
       memcpy(g_mainCanvasPixels, g_tmpCanvasPixels, g_canvasPixelsSize * sizeof(Color));
 
-      
       UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
 
-
+      // Means that we can delete redo after undo's
+      if(g_redoCanvasColorPixels.size()){
+        g_redoCanvasColorPixels.clear();
+      }
       
     }
 
