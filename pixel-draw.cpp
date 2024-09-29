@@ -105,7 +105,7 @@ void PixelDraw::DrawAndStretchCircle(int x0, int y0, int x1, int y1, bool spawnM
   }
   // size as distance
   int size = sqrt(pow(x1-x0, 2) + pow(y1-y0,2));
-  for(int i = size; i <= size+curToolSize; i++){
+  for(int i = size; i <= size; i++){
     PixelDraw::DrawCircle(midX, midY, i);
   }
 }
@@ -135,9 +135,6 @@ void PixelDraw::DrawCircle(int originX, int originY, int radius){
     int x0 = originX + radius*cos(angle);
     int y0 = originY + radius*sin(angle);
 
-    if(IsOutsideOfCanvas(x0, y0)){
-      continue;
-    }
 
     PixelDraw::ControlPixelDraw(x0, y0, curDrawingColor); 
   }
