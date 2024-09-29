@@ -454,7 +454,7 @@ void DrawAndControlGUI() {
     UpdateTexture(g_tmpCanvasTexture, g_mainCanvasPixels);
   }
 
-  ImGui::SliderInt("Tool Size", &g_pixelDraw.curToolSize, 1, 5);
+  ImGui::SliderInt("Tool Size", &g_pixelDraw.curToolSize, 1, 10);
 
   ImGui::PopFont();
 

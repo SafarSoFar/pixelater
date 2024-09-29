@@ -83,10 +83,12 @@ void PixelDraw::DrawRectangle(int x0, int y0, int x1, int y1){
     secondPointY = y0;
   }
 
+  // Drawing horizontal lines
   for(int i = firstPointX; i <= secondPointX; i++){
     PixelDraw::ControlPixelDraw(i, y0, curDrawingColor);
     PixelDraw::ControlPixelDraw(i, y1, curDrawingColor);
   }
+  // Drawing vertical lines
   for(int i = firstPointY; i <= secondPointY; i++){
     PixelDraw::ControlPixelDraw(x0, i, curDrawingColor);
     PixelDraw::ControlPixelDraw(x1, i, curDrawingColor);
@@ -146,19 +148,38 @@ void PixelDraw::ControlPixelDraw(int drawPosX, int drawPosY, Color color){
   drawPosX -= drawPosX % m_pixelBlockSize;
   drawPosY -= drawPosY % m_pixelBlockSize;
 
-  
-  DrawPixelBlock(drawPosX, drawPosY,  color);
+  for(int x = drawPosX; x < drawPosX+(curToolSize*m_pixelBlockSize); x+=m_pixelBlockSize){
+    for(int y = drawPosY; y < drawPosY+(curToolSize*m_pixelBlockSize); y+=m_pixelBlockSize){
+      DrawPixelBlock(x, y,  color);
 
-  if(xAxisMirror){
-    DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-drawPosX, drawPosY, color);
-  }
+      if(xAxisMirror){
+        DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-x, y, color);
+      }
 
-  if(yAxisMirror){
-    DrawPixelBlock(drawPosX, m_canvasHeight-m_pixelBlockSize-drawPosY, color);
-    if(xAxisMirror){
-      DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-drawPosX, m_canvasHeight-m_pixelBlockSize-drawPosY, color);
+      if(yAxisMirror){
+        DrawPixelBlock(x, m_canvasHeight-m_pixelBlockSize-y, color);
+        
+        // For both axis mirror
+        if(xAxisMirror){
+          DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-x, m_canvasHeight-m_pixelBlockSize-y, color);
+        }
+      }
+
     }
   }
+  
+  /*DrawPixelBlock(drawPosX, drawPosY,  color);*/
+  /**/
+  /*if(xAxisMirror){*/
+  /*  DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-drawPosX, drawPosY, color);*/
+  /*}*/
+  /**/
+  /*if(yAxisMirror){*/
+  /*  DrawPixelBlock(drawPosX, m_canvasHeight-m_pixelBlockSize-drawPosY, color);*/
+  /*  if(xAxisMirror){*/
+  /*    DrawPixelBlock(m_canvasWidth-m_pixelBlockSize-drawPosX, m_canvasHeight-m_pixelBlockSize-drawPosY, color);*/
+  /*  }*/
+  /*}*/
 }
 
 void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color){
