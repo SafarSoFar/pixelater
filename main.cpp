@@ -579,6 +579,17 @@ void SetupStyles(ImGuiIO io){
 
 }
 
+void ShowCenter(){
+  if(IsKeyDown(KEY_LEFT_SHIFT)){
+    Vector2 startPosVert{g_canvasPos.x+(g_canvasWidth*g_canvasScale/2), g_canvasPos.y};
+    Vector2 endPosVert{g_canvasPos.x+(g_canvasWidth*g_canvasScale/2), (float)g_canvasPos.y+g_canvasHeight*g_canvasScale};
+    Vector2 startPosHorz{g_canvasPos.x, g_canvasPos.y+(g_canvasHeight*g_canvasScale/2)};
+    Vector2 endPosHorz{(float)g_canvasWidth*g_canvasScale+g_canvasPos.x, g_canvasPos.y+(g_canvasHeight*g_canvasScale/2)};
+    DrawLineEx(startPosVert, endPosVert, 3.0f,BLACK);
+    DrawLineEx(startPosHorz, endPosHorz, 3.0f,BLACK);
+  }
+}
+
 
 // buggy
 /*void DrawSizeCursor(){*/
@@ -650,6 +661,8 @@ int main(void) {
     ControlCanvasTransform();
 
     StepsControl();
+    
+    ShowCenter();
 
     /*DrawSizeCursor();*/
 

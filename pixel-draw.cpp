@@ -123,11 +123,11 @@ void PixelDraw::DrawCenteredCircle(int centerX, int centerY, int radiusX, int ra
 
 }
 
-void PixelDraw::DrawFilledCircle(int originX, int originY, int radius){
-  for(int i = 1; i < radius; i++){
-    PixelDraw::DrawCircle(originX, originY, i);
-  }
-}
+/*void PixelDraw::DrawFilledCircle(int originX, int originY, int radius){*/
+/*  for(int i = 1; i < radius; i++){*/
+/*    PixelDraw::DrawCircle(originX, originY, i);*/
+/*  }*/
+/*}*/
 
 
 void PixelDraw::DrawCircle(int originX, int originY, int radius){
