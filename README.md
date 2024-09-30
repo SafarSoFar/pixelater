@@ -4,8 +4,18 @@
 
  *Currently the software tested only on Linux, all building settings are for Linux and compiles with Linux compiler flags.*
 
-## Examples
+## Feature examples
+<center>
+<p>
+    Shapes drawing
+</p>
 ![](git-assets/pixelater-0.gif)
+
+<p>
+    X,Y symmetry 
+</p>
+![](git-assets/pixelater-mirror.gif)
+</center>
 
 ## Usage
 Build with CMake, Make
