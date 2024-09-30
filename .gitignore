@@ -4,3 +4,4 @@
 build/*
 game
 compile.sh
+git-assets/*

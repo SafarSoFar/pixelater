@@ -4,6 +4,9 @@
 
  *Currently the software tested only on Linux, all building settings are for Linux and compiles with Linux compiler flags.*
 
+## Examples
+![](git-assets/pixelater-0.gif)
+
 ## Usage
 Build with CMake, Make
 ```
