@@ -6,14 +6,12 @@
 
 ## Feature examples
 <center>
-<p>
-    Shapes drawing
-</p>
+
+### Shapes drawing<br>
 ![](git-assets/pixelater-0.gif)
 
-<p>
-    X,Y symmetry 
-</p>
+
+### X,Y symmetry<br>
 ![](git-assets/pixelater-mirror.gif)
 </center>
 
