@@ -18,11 +18,11 @@
 
 using std::vector;
 
-// temporary global logic
-float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
-bool g_isColorPickerPressed;
-
 #define MAX_OUTPUT_FILE_SIZE 10
+
+
+// global logic in order to make web build as well
+
 char g_outputFileName[MAX_OUTPUT_FILE_SIZE];
 
 int g_screenWidth = 1280;
@@ -30,17 +30,12 @@ int g_screenHeight = 900;
 int g_canvasWidth = 512;
 int g_canvasHeight = 512;
 int g_pixelBlockSize = g_canvasWidth/32; // basic 32x32
+int g_canvasPixelsSize = g_canvasWidth * g_canvasHeight;
 
+float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
 float g_canvasScale = 1.0f;
 float g_canvasScaleMin = 0.2f;
 float g_canvasScaleMax = 5.0f;
-
-Vector2 g_canvasPos;
-Vector2 g_canvasPosBeforeDrag;
-
-int g_canvasPixelsSize = g_canvasWidth * g_canvasHeight;
-Color *g_mainCanvasPixels = new Color[g_canvasPixelsSize];
-Color *g_tmpCanvasPixels = new Color[g_canvasPixelsSize];
 
 // using texture like global increase performance.
 Texture2D g_mainCanvasTexture;
@@ -49,7 +44,6 @@ Texture2D g_transparentTexture;
 
 ImFont* g_iconFont; 
 ImFont* g_textFont; 
-
 Font g_rlFontIcons;
 
 bool g_isHoldingLMB;
@@ -57,20 +51,28 @@ bool g_isMouseDraggingCanvas = false;
 bool g_canInteractWithCanvas = true;
 bool g_isSaveImageWindowOpen = false;
 bool g_isNewCanvasWindowOpen = false;
+bool g_isColorPickerPressed;
 
 
+Vector2 g_canvasPos;
+Vector2 g_canvasPosBeforeDrag;
 Vector2 g_LMBHoldingFirstPos = Vector2Zero();
-
 Vector2 g_secondLastMousePos = Vector2Zero();
 Vector2 g_lastMousePos = Vector2Zero();
-
 Vector2 g_secondLastMousePosOnCanvas = Vector2Zero();
 Vector2 g_lastMousePosOnCanvas = Vector2Zero();
+Vector2 g_verticalCenterLineStart = Vector2Zero();
+Vector2 g_verticalCenterLineEnd = Vector2Zero();
+Vector2 g_horizontalCenterLineStart = Vector2Zero();
+Vector2 g_horizontalCenterLineEnd = Vector2Zero();
 
+Color *g_mainCanvasPixels = new Color[g_canvasPixelsSize];
+Color *g_tmpCanvasPixels = new Color[g_canvasPixelsSize];
 vector<vector<Color>> g_undoCanvasColorPixels;
 vector<vector<Color>> g_redoCanvasColorPixels;
 
 PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_tmpCanvasPixels, g_mainCanvasPixels);
+
 
 void CenterCanvasPos(){
   g_canvasPos.x = g_screenWidth/2-(g_canvasWidth*g_canvasScale)/2;
@@ -292,6 +294,13 @@ void ControlGUIHotKeys(){
   }
 }
 
+void UpdateCenterLines(){
+  g_verticalCenterLineStart = Vector2{g_canvasPos.x+(g_canvasWidth*g_canvasScale/2), g_canvasPos.y};
+  g_verticalCenterLineEnd = Vector2{g_canvasPos.x+(g_canvasWidth*g_canvasScale/2), (float)g_canvasPos.y+g_canvasHeight*g_canvasScale};
+  g_horizontalCenterLineStart = Vector2{g_canvasPos.x, g_canvasPos.y+(g_canvasHeight*g_canvasScale/2)};
+  g_horizontalCenterLineEnd = Vector2{(float)g_canvasWidth*g_canvasScale+g_canvasPos.x, g_canvasPos.y+(g_canvasHeight*g_canvasScale/2)};
+}
+
 
 void ControlCanvasTransform(){
 
@@ -333,6 +342,9 @@ void ControlCanvasTransform(){
   else if(!g_isHoldingLMB && g_isMouseDraggingCanvas){
     g_isMouseDraggingCanvas = false;
   }
+
+  // have to update center highlighting lines after canvas transformation
+  UpdateCenterLines();
 }
 
 void ControlPopUpWindows(){
@@ -579,14 +591,10 @@ void SetupStyles(ImGuiIO io){
 
 }
 
-void ShowCenter(){
+void ShouldHighlightCenter(){
   if(IsKeyDown(KEY_LEFT_SHIFT)){
-    Vector2 startPosVert{g_canvasPos.x+(g_canvasWidth*g_canvasScale/2), g_canvasPos.y};
-    Vector2 endPosVert{g_canvasPos.x+(g_canvasWidth*g_canvasScale/2), (float)g_canvasPos.y+g_canvasHeight*g_canvasScale};
-    Vector2 startPosHorz{g_canvasPos.x, g_canvasPos.y+(g_canvasHeight*g_canvasScale/2)};
-    Vector2 endPosHorz{(float)g_canvasWidth*g_canvasScale+g_canvasPos.x, g_canvasPos.y+(g_canvasHeight*g_canvasScale/2)};
-    DrawLineEx(startPosVert, endPosVert, 3.0f,BLACK);
-    DrawLineEx(startPosHorz, endPosHorz, 3.0f,BLACK);
+    DrawLineEx(g_verticalCenterLineStart, g_verticalCenterLineEnd, 3.0f,BLACK);
+    DrawLineEx(g_horizontalCenterLineStart, g_horizontalCenterLineEnd, 3.0f,BLACK);
   }
 }
 
@@ -662,7 +670,7 @@ int main(void) {
 
     StepsControl();
     
-    ShowCenter();
+    ShouldHighlightCenter();
 
     /*DrawSizeCursor();*/
 
