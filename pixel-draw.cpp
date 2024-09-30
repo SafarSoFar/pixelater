@@ -12,6 +12,10 @@ Vector2 operator-(Vector2 lhs, Vector2 rhs){
   return Vector2{rhs.x-lhs.x, rhs.y - lhs.y};
 }
 
+Vector2 operator+(Vector2 lhs, Vector2 rhs){
+  return Vector2{rhs.x+lhs.x, rhs.y + lhs.y};
+}
+
 Vector2 operator*(Vector2 lhs, float rhs){
   return Vector2{lhs.x*rhs, lhs.y*rhs};
 }

@@ -56,15 +56,16 @@ bool g_isColorPickerPressed;
 
 Vector2 g_canvasPos;
 Vector2 g_canvasPosBeforeDrag;
-Vector2 g_LMBHoldingFirstPos = Vector2Zero();
-Vector2 g_secondLastMousePos = Vector2Zero();
-Vector2 g_lastMousePos = Vector2Zero();
-Vector2 g_secondLastMousePosOnCanvas = Vector2Zero();
-Vector2 g_lastMousePosOnCanvas = Vector2Zero();
-Vector2 g_verticalCenterLineStart = Vector2Zero();
-Vector2 g_verticalCenterLineEnd = Vector2Zero();
-Vector2 g_horizontalCenterLineStart = Vector2Zero();
-Vector2 g_horizontalCenterLineEnd = Vector2Zero();
+Vector2 g_LMBHoldingFirstPos;
+Vector2 g_LMBHoldingFirstPosOnCanvas;
+Vector2 g_secondLastMousePos;
+Vector2 g_lastMousePos;
+Vector2 g_secondLastMousePosOnCanvas;
+Vector2 g_lastMousePosOnCanvas;
+Vector2 g_verticalCenterLineStart;
+Vector2 g_verticalCenterLineEnd;
+Vector2 g_horizontalCenterLineStart;
+Vector2 g_horizontalCenterLineEnd;
 
 Color *g_mainCanvasPixels = new Color[g_canvasPixelsSize];
 Color *g_tmpCanvasPixels = new Color[g_canvasPixelsSize];
@@ -152,7 +153,7 @@ void Draw() {
   switch (g_pixelDraw.curTool) {  
 
     case Line:
-      g_pixelDraw.DrawWithLine(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
+      g_pixelDraw.DrawWithLine(g_LMBHoldingFirstPosOnCanvas.x, g_LMBHoldingFirstPosOnCanvas.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
     break;
 
     case Brush:
@@ -160,7 +161,7 @@ void Draw() {
     break;
 
     case Rect:
-      g_pixelDraw.DrawRectangle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
+      g_pixelDraw.DrawRectangle(g_LMBHoldingFirstPosOnCanvas.x, g_LMBHoldingFirstPosOnCanvas.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
     break;
 
     case Eraser:
@@ -171,12 +172,12 @@ void Draw() {
 
       // The first mouse position is the center, if user is holding left alt - don't delete intermidiate stepsinclude "IconsFontAwesome5.h"
       if(IsKeyDown(KEY_LEFT_CONTROL)){
-        g_pixelDraw.DrawCenteredCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
+        g_pixelDraw.DrawCenteredCircle(g_LMBHoldingFirstPosOnCanvas.x, g_LMBHoldingFirstPosOnCanvas.y,
             g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, IsKeyDown(KEY_LEFT_ALT));
       }
       // Center is calculated as the midpoint of two mouse vectors, if user is holding left alt - don't delete intermidiate steps
       else{
-        g_pixelDraw.DrawAndStretchCircle(g_LMBHoldingFirstPos.x, g_LMBHoldingFirstPos.y,
+        g_pixelDraw.DrawAndStretchCircle(g_LMBHoldingFirstPosOnCanvas.x, g_LMBHoldingFirstPosOnCanvas.y,
             g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, IsKeyDown(KEY_LEFT_ALT));
       }
     break;
@@ -281,9 +282,19 @@ void SetMousePositions(){
 
   if(g_isMouseDraggingCanvas){
     g_lastMousePosOnCanvas = (g_canvasPosBeforeDrag - g_lastMousePos) / g_canvasScale;
-    return;
   }
-  g_lastMousePosOnCanvas = (g_canvasPos - g_lastMousePos) / g_canvasScale;
+  else{
+    g_lastMousePosOnCanvas = (g_canvasPos - g_lastMousePos) / g_canvasScale;
+  }
+
+  if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+    g_isHoldingLMB = true;
+    g_LMBHoldingFirstPosOnCanvas = g_lastMousePosOnCanvas;
+    g_LMBHoldingFirstPos = g_lastMousePos;
+  }
+  if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
+    g_isHoldingLMB = false;
+  }
 }
 
 void ControlGUIHotKeys(){
@@ -304,42 +315,40 @@ void UpdateCenterLines(){
 
 void ControlCanvasTransform(){
 
+
+  // Scale change on mouse scroll
   Vector2 mouseWheel = GetMouseWheelMoveV();
-  /*std::cout<<mouseWheel.x<<" X "<<'\n';*/
-  /*std::cout<<mouseWheel.y<<" Y "<<'\n';*/
 
-  if(IsKeyDown(KEY_LEFT_CONTROL)){
 
-    if(IsKeyPressed(KEY_EQUAL) || mouseWheel.y > 0.1f){
-      if(g_canvasScale+0.2f > g_canvasScaleMax){
-        return;
-      }
-      g_canvasScale += 0.2f;
-      CenterCanvasPos();
-
+  if(mouseWheel.y > 0.1f){
+    if(g_canvasScale+0.2f > g_canvasScaleMax){
+      return;
     }
-    else if(IsKeyPressed(KEY_MINUS) || mouseWheel.y < -0.1f){
+    g_canvasScale += 0.2f;
+    CenterCanvasPos();
 
-      if(g_canvasScale-0.2f < g_canvasScaleMin){
-        return;
-      }
-
-      g_canvasScale -= 0.2f;
-      CenterCanvasPos();
-
-    }
   }
+  else if(mouseWheel.y < -0.1f){
+
+    if(g_canvasScale-0.2f < g_canvasScaleMin){
+      return;
+    }
+
+    g_canvasScale -= 0.2f;
+    CenterCanvasPos();
+
+  }
+
   
-  // TODO when clicking at the same spot, canvas can jump to two positions for whatever reason
-  if(g_isHoldingLMB && IsKeyDown(KEY_LEFT_SHIFT)){
+  if(IsKeyDown(KEY_LEFT_ALT) && g_isHoldingLMB){
     if(!g_isMouseDraggingCanvas){
       g_canvasPosBeforeDrag = g_canvasPos;
+      g_isMouseDraggingCanvas = true;
     }
-    g_isMouseDraggingCanvas = true;
-    Vector2 differenceVector = g_LMBHoldingFirstPos - g_lastMousePosOnCanvas; 
-    g_canvasPos = g_canvasPosBeforeDrag-differenceVector;
+    Vector2 differenceVector = g_LMBHoldingFirstPos-g_lastMousePos; 
+    g_canvasPos = g_canvasPosBeforeDrag+differenceVector;
   }
-  else if(!g_isHoldingLMB && g_isMouseDraggingCanvas){
+  else if(g_isMouseDraggingCanvas){
     g_isMouseDraggingCanvas = false;
   }
 
@@ -350,7 +359,6 @@ void ControlCanvasTransform(){
 void ControlPopUpWindows(){
   if(g_isSaveImageWindowOpen){
     ImGui::Begin("File",&g_isSaveImageWindowOpen);
-
     ImGui::InputText("Enter the file name",  g_outputFileName, MAX_OUTPUT_FILE_SIZE);
 
     if(ImGui::Button("Save to PNG")){
@@ -678,10 +686,6 @@ int main(void) {
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !io.WantCaptureMouse) {
 
-      if (!g_isHoldingLMB) {
-        g_isHoldingLMB = true;
-        g_LMBHoldingFirstPos = g_lastMousePosOnCanvas;
-      }
 
       DrawTextureEx(g_tmpCanvasTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
 
@@ -689,9 +693,6 @@ int main(void) {
 
     } else {
 
-      if (g_isHoldingLMB) {
-        g_isHoldingLMB = false;
-      }
 
       DrawTextureEx(g_mainCanvasTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
 

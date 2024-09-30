@@ -32,6 +32,7 @@ bool operator==(Color lhs, Color rhs);
 bool operator==(Color lhsColor, Color rhsColor);
 
 Vector2 operator-(Vector2 lhs, Vector2 rhs);
+Vector2 operator+(Vector2 lhs, Vector2 rhs);
 Vector2 operator*(Vector2 lhs, float rhs);
 Vector2 operator/(Vector2 lhs, float rhs);
 Vector2 operator/(Vector2 lhsVec, int scalarRhs);
