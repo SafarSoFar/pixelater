@@ -50,6 +50,7 @@ class PixelDraw{
 
     PixelDraw(int canvasWidth, int canvasHeight, int pixelBlockSize, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
     void ClearPixels(); 
+    void ChangeLayer(Color tmpLayerPixels[], Color mainLayerPixels[]);
     void FillWithColor(int originX, int originY, Color fillColor);
     void DrawAndStretchCircle(int x0, int y0, int x1, int y1, bool spawnMultipleInstances);
     void DrawCenteredCircle(int centerX, int centerY, int radiusX, int radiusY, bool spawnMultipleInstances);

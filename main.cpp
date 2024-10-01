@@ -78,8 +78,8 @@ PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_tmpCanv
 struct Layer{
   string name;
   bool isSelected = false;
-  /*Color *g_mainLayerPixels = new Color[g_canvasPixelsSize];*/
-  /*Color *g_tmpLayerPixels = new Color[g_canvasPixelsSize];*/
+  Color *g_mainLayerPixels = new Color[g_canvasPixelsSize];
+  Color *g_tmpLayerPixels = new Color[g_canvasPixelsSize];
 };
 
 vector<Layer> g_layerVector;
@@ -366,6 +366,25 @@ void ControlCanvasTransform(){
   UpdateCenterLines();
 }
 
+
+void ChangeLayer(int layerIndex){
+
+  memcpy(g_layerVector[g_selectedLayerIndex].g_mainLayerPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));
+  memcpy(g_layerVector[g_selectedLayerIndex].g_tmpLayerPixels, g_tmpCanvasPixels ,g_canvasPixelsSize * sizeof(Color));
+
+  g_selectedLayerIndex = layerIndex;
+
+  memcpy(g_mainCanvasPixels, g_layerVector[g_selectedLayerIndex].g_mainLayerPixels, g_canvasPixelsSize * sizeof(Color));
+  memcpy(g_tmpCanvasPixels, g_layerVector[g_selectedLayerIndex].g_tmpLayerPixels, g_canvasPixelsSize * sizeof(Color));
+
+  /*g_mainCanvasPixels = g_layerVector[g_selectedLayerIndex].g_mainLayerPixels;*/
+  /*g_tmpCanvasPixels = g_layerVector[g_selectedLayerIndex].g_tmpLayerPixels;*/
+
+  /*g_pixelDraw.ChangeLayer(g_layerVector[g_selectedLayerIndex].g_tmpLayerPixels,*/
+  /*    g_layerVector[g_selectedLayerIndex].g_mainLayerPixels);*/
+
+}
+
 void ControlPopUpWindows(){
   if(g_isSaveImageWindowOpen){
     ImGui::Begin("File",&g_isSaveImageWindowOpen);
@@ -572,11 +591,13 @@ void DrawAndControlGUI() {
   ImGui::BeginListBox("Layers box:");
   for(int i = 0; i < g_layerVector.size();i++){
 
-    const bool isSelected = (i==g_selectedLayerIndex);
+    const bool isSelected = (i == g_selectedLayerIndex);
 
     ImGui::Selectable(g_layerVector[i].name.c_str(), isSelected);
-    if(ImGui::IsItemClicked()){
-      g_selectedLayerIndex = i;
+
+    // Selecting the item on double click
+    if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
+      ChangeLayer(i);
     }
     
   }

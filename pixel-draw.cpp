@@ -53,6 +53,12 @@ PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Colo
   this->m_mainCanvasPixels = mainCanvasPixels;
 }
 
+
+void PixelDraw::ChangeLayer(Color tmpLayerPixels[], Color mainLayerPixels[]){
+  this->m_mainCanvasPixels = mainLayerPixels;
+  this->m_tmpCanvasPixels = tmpLayerPixels;
+}
+
 void PixelDraw::SetColorFromPos(int originX, int originY){
   Color pickedColor = m_mainCanvasPixels[originX + originY * m_canvasWidth];
   this->curDrawingColor = pickedColor;
