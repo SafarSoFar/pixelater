@@ -4,9 +4,9 @@
 #include "pixel-draw.h"
 #include "raylib.h"
 #include <iostream>
-#include <sstream>
 #include <vector>
 #include <cstring>
+#include <cmath>
 #include "IconsFontAwesome5.h"
 #include <raylib.h>
 #include <raymath.h>
@@ -16,9 +16,10 @@
 /*#define STB_IMAGE_WRITE_IMPLEMENTATION*/
 #include "stb/stb_image_write.h"
 
-using std::vector;
+using std::vector, std::string;
 
 #define MAX_OUTPUT_FILE_SIZE 10
+
 
 
 // global logic in order to make web build as well
@@ -74,6 +75,15 @@ vector<vector<Color>> g_redoCanvasColorPixels;
 
 PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_tmpCanvasPixels, g_mainCanvasPixels);
 
+struct Layer{
+  string name;
+  bool isSelected = false;
+  /*Color *g_mainLayerPixels = new Color[g_canvasPixelsSize];*/
+  /*Color *g_tmpLayerPixels = new Color[g_canvasPixelsSize];*/
+};
+
+vector<Layer> g_layerVector;
+int g_selectedLayerIndex = 0;
 
 void CenterCanvasPos(){
   g_canvasPos.x = g_screenWidth/2-(g_canvasWidth*g_canvasScale)/2;
@@ -325,7 +335,7 @@ void ControlCanvasTransform(){
       return;
     }
     g_canvasScale += 0.2f;
-    CenterCanvasPos();
+    /*CenterCanvasPos();*/
 
   }
   else if(mouseWheel.y < -0.1f){
@@ -422,6 +432,7 @@ void ControlPopUpWindows(){
     ImGui::End();
   }
 }
+
 
 void DrawAndControlGUI() {
 
@@ -549,6 +560,30 @@ void DrawAndControlGUI() {
   /*ImGui::SetWindowPos(ImVec2(400, 0));*/
   /*ImGui::SliderFloat("##Vertical view", &g_canvasPos.y, 0-g_canvasHeight, g_screenHeight, "%.0f");*/
   /*ImGui::End();*/
+
+
+  ImGui::Begin("Layers");
+
+  if(ImGui::Button("Create layer")){
+    Layer nLayer = Layer{"layer"};
+    g_layerVector.push_back(nLayer);
+  }
+
+  ImGui::BeginListBox("Layers box:");
+  for(int i = 0; i < g_layerVector.size();i++){
+
+    const bool isSelected = (i==g_selectedLayerIndex);
+
+    ImGui::Selectable(g_layerVector[i].name.c_str(), isSelected);
+    if(ImGui::IsItemClicked()){
+      g_selectedLayerIndex = i;
+    }
+    
+  }
+
+  ImGui::EndListBox();
+  ImGui::End();
+
 
   ImGui::Render();
   ImGui_ImplRaylib_RenderDrawData(ImGui::GetDrawData());
