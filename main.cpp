@@ -21,7 +21,6 @@ using std::vector, std::string;
 #define MAX_OUTPUT_FILE_NAME_SIZE 20
 
 
-
 // global logic in order to make web build as well
 
 char g_outputFileName[MAX_OUTPUT_FILE_NAME_SIZE];
@@ -68,24 +67,29 @@ Vector2 g_verticalCenterLineEnd;
 Vector2 g_horizontalCenterLineStart;
 Vector2 g_horizontalCenterLineEnd;
 
-ImVec2 g_layerListBoxSize;
-
 Color *g_mainCanvasPixels = new Color[g_canvasPixelsSize];
 Color *g_tmpCanvasPixels = new Color[g_canvasPixelsSize];
-vector<vector<Color>> g_undoCanvasColorPixels;
-vector<vector<Color>> g_redoCanvasColorPixels;
+/*vector<vector<Color>> g_undoCanvasColorPixels;*/
+/*vector<vector<Color>> g_redoCanvasColorPixels;*/
 
 PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_tmpCanvasPixels, g_mainCanvasPixels);
 
 struct Layer{
   string name;
   bool isSelected = false;
-  Color *g_mainLayerPixels = new Color[g_canvasPixelsSize];
-  Color *g_tmpLayerPixels = new Color[g_canvasPixelsSize];
+
+  // () ensures that each index has default zero value 
+  Color *g_layerPixels = new Color[g_canvasPixelsSize]();
+  vector<vector<Color>> undoCanvasColorPixels;
+  vector<vector<Color>> redoCanvasColorPixels;
 };
 
-vector<Layer> g_layerVector;
+vector<Layer> g_layerVector = {{"1"}};
+vector<vector<Color>> g_undoCanvasColorPixels = g_layerVector[0].undoCanvasColorPixels;
+vector<vector<Color>> g_redoCanvasColorPixels = g_layerVector[0].redoCanvasColorPixels;
 int g_selectedLayerIndex = 0;
+
+
 
 void CenterCanvasPos(){
   g_canvasPos.x = g_screenWidth/2-(g_canvasWidth*g_canvasScale)/2;
@@ -371,19 +375,16 @@ void ControlCanvasTransform(){
 
 void ChangeLayer(int layerIndex){
 
-  memcpy(g_layerVector[g_selectedLayerIndex].g_mainLayerPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));
-  memcpy(g_layerVector[g_selectedLayerIndex].g_tmpLayerPixels, g_tmpCanvasPixels ,g_canvasPixelsSize * sizeof(Color));
+  std::cout<<"Selected Layer: "<<layerIndex<<'\n';
+  memcpy(g_layerVector[g_selectedLayerIndex].g_layerPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));
 
   g_selectedLayerIndex = layerIndex;
 
-  memcpy(g_mainCanvasPixels, g_layerVector[g_selectedLayerIndex].g_mainLayerPixels, g_canvasPixelsSize * sizeof(Color));
-  memcpy(g_tmpCanvasPixels, g_layerVector[g_selectedLayerIndex].g_tmpLayerPixels, g_canvasPixelsSize * sizeof(Color));
+  memcpy(g_mainCanvasPixels, g_layerVector[g_selectedLayerIndex].g_layerPixels, g_canvasPixelsSize * sizeof(Color));
+  memcpy(g_tmpCanvasPixels, g_layerVector[g_selectedLayerIndex].g_layerPixels, g_canvasPixelsSize * sizeof(Color));
 
-  /*g_mainCanvasPixels = g_layerVector[g_selectedLayerIndex].g_mainLayerPixels;*/
-  /*g_tmpCanvasPixels = g_layerVector[g_selectedLayerIndex].g_tmpLayerPixels;*/
-
-  /*g_pixelDraw.ChangeLayer(g_layerVector[g_selectedLayerIndex].g_tmpLayerPixels,*/
-  /*    g_layerVector[g_selectedLayerIndex].g_mainLayerPixels);*/
+  g_undoCanvasColorPixels = g_layerVector[g_selectedLayerIndex].undoCanvasColorPixels;
+  g_redoCanvasColorPixels = g_layerVector[g_selectedLayerIndex].redoCanvasColorPixels;
 
 }
 
@@ -592,7 +593,7 @@ void DrawAndControlGUI() {
   // listBox position offset to window pos is x = 10, y = 30 
   float mouseYRelativeToListBox = mousePos.y - layersWinPos.y-30;
 
-  ImGui::BeginListBox("Layers box:");
+  ImGui::BeginListBox("##Layers box:");
   
   for(int i = 0; i < g_layerVector.size();i++){
 
@@ -609,11 +610,11 @@ void DrawAndControlGUI() {
     // Item number from mouseY and item height (20) division
     int curItem = mouseYRelativeToListBox / 20;
 
-    if(ImGui::IsItemActive() && ImGui::IsMouseDragging(0)){
-      if(curItem >= 0 && curItem < g_layerVector.size()){
-        std::swap(g_layerVector[i], g_layerVector[curItem]);
-      }       
-    }
+    /*if(ImGui::IsItemActive() && ImGui::IsMouseDragging(0)){*/
+    /*  if(curItem >= 0 && curItem < g_layerVector.size()){*/
+    /*    std::swap(g_layerVector[i], g_layerVector[curItem]);*/
+    /*  }       */
+    /*}*/
     
   }
 
@@ -625,6 +626,7 @@ void DrawAndControlGUI() {
   if(ImGui::Button("Create layer")){
     string counterStr = std::to_string(g_layerVector.size()+1);
     Layer nLayer = Layer{counterStr};
+    /*g_layerVector.insert(g_layerVector.begin(), nLayer);*/
     g_layerVector.push_back(nLayer);
   }
 
