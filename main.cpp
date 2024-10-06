@@ -18,13 +18,13 @@
 
 using std::vector, std::string;
 
-#define MAX_OUTPUT_FILE_SIZE 10
+#define MAX_OUTPUT_FILE_NAME_SIZE 20
 
 
 
 // global logic in order to make web build as well
 
-char g_outputFileName[MAX_OUTPUT_FILE_SIZE];
+char g_outputFileName[MAX_OUTPUT_FILE_NAME_SIZE];
 
 int g_screenWidth = 1280;
 int g_screenHeight = 900;
@@ -67,6 +67,8 @@ Vector2 g_verticalCenterLineStart;
 Vector2 g_verticalCenterLineEnd;
 Vector2 g_horizontalCenterLineStart;
 Vector2 g_horizontalCenterLineEnd;
+
+ImVec2 g_layerListBoxSize;
 
 Color *g_mainCanvasPixels = new Color[g_canvasPixelsSize];
 Color *g_tmpCanvasPixels = new Color[g_canvasPixelsSize];
@@ -335,7 +337,7 @@ void ControlCanvasTransform(){
       return;
     }
     g_canvasScale += 0.2f;
-    /*CenterCanvasPos();*/
+    CenterCanvasPos();
 
   }
   else if(mouseWheel.y < -0.1f){
@@ -388,7 +390,7 @@ void ChangeLayer(int layerIndex){
 void ControlPopUpWindows(){
   if(g_isSaveImageWindowOpen){
     ImGui::Begin("File",&g_isSaveImageWindowOpen);
-    ImGui::InputText("Enter the file name",  g_outputFileName, MAX_OUTPUT_FILE_SIZE);
+    ImGui::InputText("Enter the file name",  g_outputFileName, MAX_OUTPUT_FILE_NAME_SIZE);
 
     if(ImGui::Button("Save to PNG")){
       SavePixelArt(g_outputFileName);
@@ -411,12 +413,12 @@ void ControlPopUpWindows(){
     if(ImGui::BeginListBox("Pixel size")){
       for (int n = 0; n < IM_ARRAYSIZE(items); n++)
       {
-        const bool is_selected = (selectedItemIndex == n);
-        if (ImGui::Selectable(items[n], is_selected))
+        const bool isSelected = (selectedItemIndex == n);
+        if (ImGui::Selectable(items[n], isSelected))
             selectedItemIndex = n;
 
         // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-        if (is_selected)
+        if (isSelected)
             ImGui::SetItemDefaultFocus();
       }
       ImGui::EndListBox();
@@ -583,26 +585,49 @@ void DrawAndControlGUI() {
 
   ImGui::Begin("Layers");
 
-  if(ImGui::Button("Create layer")){
-    Layer nLayer = Layer{"layer"};
-    g_layerVector.push_back(nLayer);
-  }
+  ImVec2 layersWinPos = ImGui::GetWindowPos();
+  
+  ImVec2 mousePos = ImGui::GetMousePos();
+
+  // listBox position offset to window pos is x = 10, y = 30 
+  float mouseYRelativeToListBox = mousePos.y - layersWinPos.y-30;
 
   ImGui::BeginListBox("Layers box:");
+  
   for(int i = 0; i < g_layerVector.size();i++){
 
     const bool isSelected = (i == g_selectedLayerIndex);
 
-    ImGui::Selectable(g_layerVector[i].name.c_str(), isSelected);
+    ImGui::Selectable(g_layerVector[i].name.c_str(), isSelected, ImGuiSelectableFlags_None,ImVec2{100,20});
 
+    
     // Selecting the item on double click
     if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
       ChangeLayer(i);
     }
+
+    // Item number from mouseY and item height (20) division
+    int curItem = mouseYRelativeToListBox / 20;
+
+    if(ImGui::IsItemActive() && ImGui::IsMouseDragging(0)){
+      if(curItem >= 0 && curItem < g_layerVector.size()){
+        std::swap(g_layerVector[i], g_layerVector[curItem]);
+      }       
+    }
     
   }
 
+
   ImGui::EndListBox();
+
+  /*g_layerListBoxSize = ImGui::GetItemRectSize();*/
+
+  if(ImGui::Button("Create layer")){
+    string counterStr = std::to_string(g_layerVector.size()+1);
+    Layer nLayer = Layer{counterStr};
+    g_layerVector.push_back(nLayer);
+  }
+
   ImGui::End();
 
 
