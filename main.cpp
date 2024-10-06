@@ -602,19 +602,24 @@ void DrawAndControlGUI() {
     ImGui::Selectable(g_layerVector[i].name.c_str(), isSelected, ImGuiSelectableFlags_None,ImVec2{100,20});
 
     
-    // Selecting the item on double click
-    if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
-      ChangeLayer(i);
-    }
 
     // Item number from mouseY and item height (20) division
     int curItem = mouseYRelativeToListBox / 20;
 
-    /*if(ImGui::IsItemActive() && ImGui::IsMouseDragging(0)){*/
-    /*  if(curItem >= 0 && curItem < g_layerVector.size()){*/
-    /*    std::swap(g_layerVector[i], g_layerVector[curItem]);*/
-    /*  }       */
-    /*}*/
+    // Logic to drag selectable layers and swap their places
+    if(ImGui::IsItemFocused() && ImGui::IsMouseDragging(0)){
+      if(curItem >= 0 && curItem != i && curItem < g_layerVector.size()){
+        std::swap(g_layerVector[i], g_layerVector[curItem]);
+        // swapped the indexed so we change the layerIndex on the index of the cur position
+        g_selectedLayerIndex = curItem;
+
+      }       
+    }
+
+    // Selecting the item on double click
+    if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
+      ChangeLayer(i);
+    }
     
   }
 
