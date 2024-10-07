@@ -491,6 +491,80 @@ void ControlPopUpWindows(){
 }
 
 
+void DrawAndControlLayersGUILogic(){
+  bool isLayersWindowOpened = true;
+  ImGui::Begin("Layers", &isLayersWindowOpened, ImGuiWindowFlags_NoResize);
+
+  ImVec2 layersWinPos = ImGui::GetWindowPos();
+  
+  ImVec2 mousePos = ImGui::GetMousePos();
+
+  // the title bar is 20 pixels
+  float mouseYRelativeToWindow = mousePos.y - layersWinPos.y-20;
+
+  // Works better without a layer box..
+  /*if(ImGui::BeginListBox("##Layers box:")){*/
+
+    for(int i = 0; i < g_layerVector.size();i++){
+
+      const bool isSelected = (i == g_selectedLayerIndex);
+
+      // Getting widget drawing cursor here in order to use it while drawing
+      // next overlapping widgets
+      ImVec2 cursorPos = ImGui::GetCursorPos();
+      ImGui::Selectable(g_layerVector[i].name, isSelected, ImGuiSelectableFlags_AllowOverlap,ImVec2{170,20});
+
+      /*ImGui::SetCursorPos(ImVec2{cursorPos.x+20, cursorPos.y});*/
+      /*if(ImGui::InputText("##textInput", g_layerVector[i].name, sizeof(g_layerVector[i].name), ImGuiInputTextFlags_)){*/
+      /*}*/
+
+      // Item number from mouseY and item height (20) division
+      int curItem = mouseYRelativeToWindow / 20;
+
+      // Logic to drag selectable layers and swap their places
+      if(ImGui::IsItemFocused() && ImGui::IsMouseDragging(0)){
+        if(curItem >= 0 && curItem != i && curItem < g_layerVector.size()){
+          std::swap(g_layerVector[i], g_layerVector[curItem]);
+          // Swapped the indexed so we change the layerIndex on the index of the cur position
+          g_selectedLayerIndex = curItem;
+          UpdateAllPixels();
+          std::cout<<"layers swapped"<<'\n';
+          /*UpdateMainCanvasPixels();*/
+
+        }       
+      }
+
+      // Selecting the item on double click
+      if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
+        ChangeLayer(i);
+      }
+
+      // TODO somehow change state state of checkboxes because only the last one is responsive
+      ImGui::SameLine();
+      ImGui::Checkbox("##layer check box", &g_layerVector[i].isActive);
+      
+    }
+
+  /*  ImGui::EndListBox();*/
+  /*}*/
+
+  
+
+
+  if(ImGui::Button("Create layer")){
+    char counterStr[15];
+    strncpy(counterStr, std::to_string(g_layerVector.size()+1).c_str(), sizeof(counterStr));
+    Layer nLayer = Layer{*counterStr};
+    g_layerVector.insert(g_layerVector.begin(), nLayer);
+    // Appending to the beginning, setting index to the newly created layer so 0 index
+    /*g_selectedLayerIndex = 0;*/
+    g_selectedLayerIndex++;
+  }
+
+  ImGui::End();
+}
+
+
 void DrawAndControlGUI() {
 
   ImGui_ImplRaylib_ProcessEvents();
@@ -619,72 +693,8 @@ void DrawAndControlGUI() {
   /*ImGui::End();*/
 
 
-  bool isLayersWindowOpened = true;
-  ImGui::Begin("Layers", &isLayersWindowOpened, ImGuiWindowFlags_NoResize);
 
-  ImVec2 layersWinPos = ImGui::GetWindowPos();
-  
-  ImVec2 mousePos = ImGui::GetMousePos();
-
-  // ListBox position offset to window pos is x = 10, y = 30 
-  float mouseYRelativeToListBox = mousePos.y - layersWinPos.y-30;
-
-  if(ImGui::BeginListBox("##Layers box:")){
-
-    for(int i = 0; i < g_layerVector.size();i++){
-
-      const bool isSelected = (i == g_selectedLayerIndex);
-
-      // Getting widget drawing cursor here in order to use it while drawing
-      // next overlapping widgets
-      ImVec2 cursorPos = ImGui::GetCursorPos();
-      ImGui::Selectable(g_layerVector[i].name, isSelected, ImGuiSelectableFlags_AllowOverlap,ImVec2{170,20});
-
-      /*ImGui::SetCursorPos(ImVec2{cursorPos.x+20, cursorPos.y});*/
-      /*if(ImGui::InputText("##textInput", g_layerVector[i].name, sizeof(g_layerVector[i].name), ImGuiInputTextFlags_)){*/
-      /*}*/
-
-      
-
-      // Item number from mouseY and item height (20) division
-      int curItem = mouseYRelativeToListBox / 20;
-
-      // Logic to drag selectable layers and swap their places
-      if(ImGui::IsItemFocused() && ImGui::IsMouseDragging(0)){
-        if(curItem >= 0 && curItem != i && curItem < g_layerVector.size()){
-          std::swap(g_layerVector[i], g_layerVector[curItem]);
-          // Swapped the indexed so we change the layerIndex on the index of the cur position
-          g_selectedLayerIndex = curItem;
-          UpdateAllPixels();
-          /*UpdateMainCanvasPixels();*/
-
-        }       
-      }
-
-      // Selecting the item on double click
-      if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
-        ChangeLayer(i);
-      }
-      
-    }
-
-    ImGui::EndListBox();
-  }
-
-  
-
-
-  if(ImGui::Button("Create layer")){
-    char counterStr[15];
-    strncpy(counterStr, std::to_string(g_layerVector.size()+1).c_str(), sizeof(counterStr));
-    Layer nLayer = Layer{*counterStr};
-    g_layerVector.insert(g_layerVector.begin(), nLayer);
-    // Appending to the beginning so the current index will be index++
-    g_selectedLayerIndex++;
-  }
-
-  ImGui::End();
-
+  DrawAndControlLayersGUILogic();
 
   ImGui::Render();
   ImGui_ImplRaylib_RenderDrawData(ImGui::GetDrawData());
