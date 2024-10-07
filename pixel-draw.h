@@ -51,6 +51,7 @@ class PixelDraw{
 
     PixelDraw(int canvasWidth, int canvasHeight, int pixelBlockSize, Color canvasPixels[], Color mainLayerPixels[], Color tmpLayerPixels[]);
     void ClearLayerPixels(); 
+    void ClearCanvasPixels();
     void ChangeLayer(Color mainLayerPixels[], Color tmpLayerPixels[]);
     void FillWithColor(int originX, int originY, Color fillColor);
     void DrawAndStretchCircle(int x0, int y0, int x1, int y1, bool spawnMultipleInstances);
@@ -77,13 +78,13 @@ class PixelDraw{
     int m_canvasPixelAmountY;
     int m_canvasWidth;
     int m_canvasHeight;
-    int m_pixelsSize;
+    int m_canvasPixelsSize;
 
     Color *m_canvasPixels;
     Color *m_mainLayerPixels;
     Color *m_tmpLayerPixels;
 
-    void ResetTMPBuffer();
+    void ResetBufferState();
 
 };
 

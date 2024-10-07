@@ -51,7 +51,7 @@ PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Colo
   this->m_canvasPixelAmountX = m_canvasWidth/m_pixelBlockSize;
   this->m_canvasPixelAmountY = m_canvasHeight/m_pixelBlockSize;
 
-  this->m_pixelsSize = screenWidth * screenHeight;
+  this->m_canvasPixelsSize = screenWidth * screenHeight;
 
   this->m_canvasPixels = canvasPixels;
   this->m_mainLayerPixels = mainLayerPixels;
@@ -72,7 +72,7 @@ void PixelDraw::SetColorFromPos(int originX, int originY){
 
 void PixelDraw::DrawRectangle(int x0, int y0, int x1, int y1){
 
-  PixelDraw::ResetTMPBuffer();
+  PixelDraw::ResetBufferState();
 
   float firstPointX;
   float secondPointX;
@@ -116,7 +116,7 @@ void PixelDraw::DrawAndStretchCircle(int x0, int y0, int x1, int y1, bool spawnM
   int midX = abs(x1+x0)/2;
   int midY = abs(y1+y0)/2;
   if(!spawnMultipleInstances){
-    PixelDraw::ResetTMPBuffer();
+    PixelDraw::ResetBufferState();
   }
   // size as distance
   int size = sqrt(pow(x1-x0, 2) + pow(y1-y0,2));
@@ -129,7 +129,7 @@ void PixelDraw::DrawCenteredCircle(int centerX, int centerY, int radiusX, int ra
   
   int radius = sqrt(pow(radiusX - centerX,2) + pow(radiusY - centerY,2));
   if(!spawnMultipleInstances){
-    PixelDraw::ResetTMPBuffer();
+    PixelDraw::ResetBufferState();
   }
 
   for(int i = radius; i <= radius+curToolSize; i++){
@@ -202,18 +202,25 @@ void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color){
   
   for(int i = drawPosX; i < m_canvasWidth && i < drawPosX+m_pixelBlockSize; i++){
     for(int j = drawPosY; j < m_canvasHeight && j < drawPosY+m_pixelBlockSize; j++){
-      m_tmpLayerPixels[i + j * m_canvasWidth] = color;
+      m_mainLayerPixels[i + j * m_canvasWidth] = color;
     }
   }
   
 }
 
-void PixelDraw::ClearLayerPixels() {
-  Color transparentColor = Color{0,0,0,0};
+void PixelDraw::ClearCanvasPixels(){
   for (int i = 0; i < m_canvasWidth; i++) {
     for(int j = 0; j < m_canvasHeight; j++){
-        m_mainLayerPixels[i+j*m_canvasWidth] = transparentColor;
-        m_tmpLayerPixels[i+j*m_canvasWidth] = transparentColor;
+        m_canvasPixels[i+j*m_canvasWidth] = BLANK;
+    }
+  }
+}
+
+void PixelDraw::ClearLayerPixels() {
+  for (int i = 0; i < m_canvasWidth; i++) {
+    for(int j = 0; j < m_canvasHeight; j++){
+        m_mainLayerPixels[i+j*m_canvasWidth] = BLANK;
+        m_tmpLayerPixels[i+j*m_canvasWidth] = BLANK;
     }
   }
 }
@@ -239,7 +246,7 @@ void PixelDraw::FillWithColor(int originX, int originY, Color fillColor){
     if(!IsOutsideOfCanvas(coords.first, coords.second) && !isVis[coords.first][coords.second] 
         && m_canvasPixels[coords.first + coords.second * m_canvasWidth] == colorToFill){
       // Filling only pixels
-      m_tmpLayerPixels[coords.first + coords.second * m_canvasWidth] = fillColor;
+      m_mainLayerPixels[coords.first + coords.second * m_canvasWidth] = fillColor;
       isVis[coords.first][coords.second] = true;
       q.push({coords.first+1, coords.second});
       q.push({coords.first-1, coords.second});
@@ -301,7 +308,7 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
   }
 
   // resetting the buffer to draw only one line at the time
-  PixelDraw::ResetTMPBuffer();
+  PixelDraw::ResetBufferState();
 
   float x = x1 - x0;
   float y = y1 - y0;
@@ -327,9 +334,9 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
   }
 }
 
-void PixelDraw::ResetTMPBuffer(){
+void PixelDraw::ResetBufferState(){
   // resetting the buffer to draw only one instance at the time
-  memcpy(m_tmpLayerPixels, m_mainLayerPixels, m_pixelsSize * sizeof(Color));
+  memcpy(m_mainLayerPixels, m_tmpLayerPixels, m_canvasPixelsSize * sizeof(Color));
 }
 
 

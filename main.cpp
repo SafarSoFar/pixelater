@@ -157,12 +157,17 @@ void AddPixelsToUndo(){
 
 }
 
+
 void UpdateAllPixels(){
+
+  // to remove previous canvas pixels color that are currently blank on some layers
+  g_pixelDraw.ClearCanvasPixels();
+
   for(int i = 0; i < g_canvasWidth; i++){
     for(int j = 0; j < g_canvasHeight; j++){
       for(int l = 0; l < g_layerVector.size(); l++){
-        if(g_layerVector[l].isActive && g_layerVector[l].tmpLayerPixels[i+j*g_canvasWidth] != BLANK){
-          g_canvasPixels[i + j * g_canvasWidth] = g_layerVector[l].tmpLayerPixels[i+j*g_canvasWidth];
+        if(g_layerVector[l].isActive && g_layerVector[l].mainLayerPixels[i+j*g_canvasWidth] != BLANK){
+          g_canvasPixels[i + j * g_canvasWidth] = g_layerVector[l].mainLayerPixels[i+j*g_canvasWidth];
           break;
         }
       }
@@ -171,8 +176,8 @@ void UpdateAllPixels(){
   UpdateTexture(g_mainCanvasTexture, g_canvasPixels);
 }
 
-void UpdateLayerTMPPixels(){
-  memcpy(g_layerVector[g_selectedLayerIndex].mainLayerPixels,g_layerVector[g_selectedLayerIndex].tmpLayerPixels, g_canvasPixelsSize * sizeof(Color));
+void UpdateTMPLayerPixels(){
+  memcpy(g_layerVector[g_selectedLayerIndex].tmpLayerPixels,g_layerVector[g_selectedLayerIndex].mainLayerPixels, g_canvasPixelsSize * sizeof(Color));
 }
 
 /*void UpdateMainCanvasPixels(){*/
@@ -761,7 +766,7 @@ int main(void) {
 
   SetupStyles(io);
 
-  g_pixelDraw.ClearLayerPixels();
+  /*g_pixelDraw.ClearLayerPixels();*/
 
   Image g_image = {g_canvasPixels, g_canvasWidth, g_canvasHeight, 1,
                    PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
@@ -813,18 +818,11 @@ int main(void) {
     /*DrawSizeCursor();*/
 
     
+    DrawTextureEx(g_mainCanvasTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !io.WantCaptureMouse) {
 
-
-      DrawTextureEx(g_mainCanvasTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
-
       Draw();
-
-    } else {
-
-
-      DrawTextureEx(g_mainCanvasTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
 
     }
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
@@ -832,7 +830,7 @@ int main(void) {
       // TODO make layer system work with undo/redo
       /*AddCanvasToUndo();*/ 
 
-      UpdateLayerTMPPixels();
+      UpdateTMPLayerPixels();
 
       // Means that we can delete redo after undo's
       if(g_redoCanvasColorPixels.size()){
