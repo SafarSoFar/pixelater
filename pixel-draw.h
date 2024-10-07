@@ -36,6 +36,7 @@ Vector2 operator+(Vector2 lhs, Vector2 rhs);
 Vector2 operator*(Vector2 lhs, float rhs);
 Vector2 operator/(Vector2 lhs, float rhs);
 Vector2 operator/(Vector2 lhsVec, int scalarRhs);
+bool operator!=(Color lhsColor, Color rhsColor);
 
 
 
@@ -48,9 +49,9 @@ class PixelDraw{
     bool xAxisMirror = false;
     bool yAxisMirror = false;
 
-    PixelDraw(int canvasWidth, int canvasHeight, int pixelBlockSize, Color tmpCanvasPixels[], Color mainCanvasPixels[]);
-    void ClearPixels(); 
-    void ChangeLayer(Color tmpLayerPixels[], Color mainLayerPixels[]);
+    PixelDraw(int canvasWidth, int canvasHeight, int pixelBlockSize, Color canvasPixels[], Color mainLayerPixels[], Color tmpLayerPixels[]);
+    void ClearLayerPixels(); 
+    void ChangeLayer(Color mainLayerPixels[], Color tmpLayerPixels[]);
     void FillWithColor(int originX, int originY, Color fillColor);
     void DrawAndStretchCircle(int x0, int y0, int x1, int y1, bool spawnMultipleInstances);
     void DrawCenteredCircle(int centerX, int centerY, int radiusX, int radiusY, bool spawnMultipleInstances);
@@ -70,14 +71,17 @@ class PixelDraw{
 
   private:
     bool m_isFillingCanvas = false;
+
     int m_pixelBlockSize;
     int m_canvasPixelAmountX;
     int m_canvasPixelAmountY;
     int m_canvasWidth;
     int m_canvasHeight;
     int m_pixelsSize;
-    Color *m_tmpCanvasPixels;
-    Color *m_mainCanvasPixels;
+
+    Color *m_canvasPixels;
+    Color *m_mainLayerPixels;
+    Color *m_tmpLayerPixels;
 
     void ResetTMPBuffer();
 

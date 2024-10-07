@@ -31,11 +31,15 @@ Vector2 operator/(Vector2 lhsVec, int scalarRhs){
   return Vector2{lhsVec.x / scalarRhs, lhsVec.y / scalarRhs};
 }
 
+bool operator!=(Color lhsColor, Color rhsColor){
+  return !(lhsColor == rhsColor);
+}
+
 bool PixelDraw::IsOutsideOfCanvas(int x, int y){
   return x < 0 || y < 0 || x >= m_canvasWidth || y >= m_canvasHeight; 
 }
 
-PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Color tmpCanvasPixels[], Color mainCanvasPixels[]){
+PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Color canvasPixels[], Color mainLayerPixels[], Color tmpLayerPixels[]){
   this->curDrawingColor = BLACK;
   this->curTool = Tool::Brush;
   this->curToolSize = 1;
@@ -49,18 +53,19 @@ PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Colo
 
   this->m_pixelsSize = screenWidth * screenHeight;
 
-  this->m_tmpCanvasPixels = tmpCanvasPixels;
-  this->m_mainCanvasPixels = mainCanvasPixels;
+  this->m_canvasPixels = canvasPixels;
+  this->m_mainLayerPixels = mainLayerPixels;
+  this->m_tmpLayerPixels = tmpLayerPixels;
 }
 
 
-void PixelDraw::ChangeLayer(Color tmpLayerPixels[], Color mainLayerPixels[]){
-  this->m_mainCanvasPixels = mainLayerPixels;
-  this->m_tmpCanvasPixels = tmpLayerPixels;
+void PixelDraw::ChangeLayer(Color mainLayerPixels[], Color tmpLayerPixels[]){
+  this->m_mainLayerPixels = mainLayerPixels;
+  this->m_tmpLayerPixels = tmpLayerPixels;
 }
 
 void PixelDraw::SetColorFromPos(int originX, int originY){
-  Color pickedColor = m_mainCanvasPixels[originX + originY * m_canvasWidth];
+  Color pickedColor = m_canvasPixels[originX + originY * m_canvasWidth];
   this->curDrawingColor = pickedColor;
 
 }
@@ -197,18 +202,18 @@ void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color){
   
   for(int i = drawPosX; i < m_canvasWidth && i < drawPosX+m_pixelBlockSize; i++){
     for(int j = drawPosY; j < m_canvasHeight && j < drawPosY+m_pixelBlockSize; j++){
-      m_tmpCanvasPixels[i + j * m_canvasWidth] = color;
+      m_tmpLayerPixels[i + j * m_canvasWidth] = color;
     }
   }
   
 }
 
-void PixelDraw::ClearPixels() {
+void PixelDraw::ClearLayerPixels() {
   Color transparentColor = Color{0,0,0,0};
   for (int i = 0; i < m_canvasWidth; i++) {
     for(int j = 0; j < m_canvasHeight; j++){
-        m_mainCanvasPixels[i+j*m_canvasWidth] = transparentColor;
-        m_tmpCanvasPixels[i+j*m_canvasWidth] = transparentColor;
+        m_mainLayerPixels[i+j*m_canvasWidth] = transparentColor;
+        m_tmpLayerPixels[i+j*m_canvasWidth] = transparentColor;
     }
   }
 }
@@ -218,7 +223,7 @@ void PixelDraw::FillWithColor(int originX, int originY, Color fillColor){
     return;
 
   m_isFillingCanvas = true;
-  Color colorToFill = m_tmpCanvasPixels[originX + originY * m_canvasWidth];
+  Color colorToFill = m_canvasPixels[originX + originY * m_canvasWidth];
 
   // Worst case scenario fill memory usage - fill full screen
   std::vector<std::vector<bool>> isVis(m_canvasWidth, std::vector<bool>(m_canvasHeight, false));
@@ -230,9 +235,11 @@ void PixelDraw::FillWithColor(int originX, int originY, Color fillColor){
 
     std::pair<int,int> coords = q.front();
     q.pop();
+    // Checking canvas pixels boundaries and required color to fill
     if(!IsOutsideOfCanvas(coords.first, coords.second) && !isVis[coords.first][coords.second] 
-        && m_tmpCanvasPixels[coords.first + coords.second * m_canvasWidth] == colorToFill){
-      m_tmpCanvasPixels[coords.first + coords.second * m_canvasWidth] = fillColor;
+        && m_canvasPixels[coords.first + coords.second * m_canvasWidth] == colorToFill){
+      // Filling only pixels
+      m_tmpLayerPixels[coords.first + coords.second * m_canvasWidth] = fillColor;
       isVis[coords.first][coords.second] = true;
       q.push({coords.first+1, coords.second});
       q.push({coords.first-1, coords.second});
@@ -253,7 +260,7 @@ void PixelDraw::DrawFilledSquare(int originX, int originY, int size, Color color
       for (int j = originY - size;
           j <= originY + size; j++) {
         if (!IsOutsideOfCanvas(i, j)){
-          m_tmpCanvasPixels[i + j * m_canvasWidth] = color;
+          m_tmpLayerPixels[i + j * m_canvasWidth] = color;
         }
       }
     }
@@ -322,7 +329,7 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
 
 void PixelDraw::ResetTMPBuffer(){
   // resetting the buffer to draw only one instance at the time
-  memcpy(m_tmpCanvasPixels, m_mainCanvasPixels, m_pixelsSize * sizeof(Color));
+  memcpy(m_tmpLayerPixels, m_mainLayerPixels, m_pixelsSize * sizeof(Color));
 }
 
 

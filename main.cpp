@@ -3,7 +3,9 @@
 #include "rlImGui/imgui_impl_raylib.h"
 #include "pixel-draw.h"
 #include "raylib.h"
+#include <charconv>
 #include <iostream>
+#include <iterator>
 #include <vector>
 #include <cstring>
 #include <cmath>
@@ -39,7 +41,6 @@ float g_canvasScaleMax = 5.0f;
 
 // using texture like global increase performance.
 Texture2D g_mainCanvasTexture;
-Texture2D g_tmpCanvasTexture;
 Texture2D g_transparentTexture;
 
 ImFont* g_iconFont; 
@@ -67,19 +68,19 @@ Vector2 g_verticalCenterLineEnd;
 Vector2 g_horizontalCenterLineStart;
 Vector2 g_horizontalCenterLineEnd;
 
-Color *g_mainCanvasPixels = new Color[g_canvasPixelsSize];
-Color *g_tmpCanvasPixels = new Color[g_canvasPixelsSize];
+Color *g_canvasPixels = new Color[g_canvasPixelsSize]();
 /*vector<vector<Color>> g_undoCanvasColorPixels;*/
 /*vector<vector<Color>> g_redoCanvasColorPixels;*/
 
-PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_tmpCanvasPixels, g_mainCanvasPixels);
 
 struct Layer{
-  string name;
+  char name[15];
   bool isSelected = false;
+  bool isActive = true;
 
   // () ensures that each index has default zero value 
-  Color *g_layerPixels = new Color[g_canvasPixelsSize]();
+  Color *mainLayerPixels = new Color[g_canvasPixelsSize]();
+  Color *tmpLayerPixels = new Color[g_canvasPixelsSize]();
   vector<vector<Color>> undoCanvasColorPixels;
   vector<vector<Color>> redoCanvasColorPixels;
 };
@@ -90,6 +91,7 @@ vector<vector<Color>> g_redoCanvasColorPixels = g_layerVector[0].redoCanvasColor
 int g_selectedLayerIndex = 0;
 
 
+PixelDraw g_pixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_canvasPixels,g_layerVector[0].mainLayerPixels, g_layerVector[0].tmpLayerPixels);
 
 void CenterCanvasPos(){
   g_canvasPos.x = g_screenWidth/2-(g_canvasWidth*g_canvasScale)/2;
@@ -122,9 +124,11 @@ void SetTransparentTexture(){
 
 void CreateCanvas(int pixelSize){
   g_pixelBlockSize = pixelSize;
-  g_pixelDraw = PixelDraw(g_canvasWidth, g_canvasHeight, g_pixelBlockSize, g_tmpCanvasPixels, g_mainCanvasPixels);
+  g_pixelDraw = PixelDraw(g_canvasWidth, g_canvasHeight, 
+      g_pixelBlockSize, g_canvasPixels, g_layerVector[g_selectedLayerIndex].mainLayerPixels,
+      g_layerVector[g_selectedLayerIndex].tmpLayerPixels);
   CenterCanvasPos();
-  g_pixelDraw.ClearPixels();
+  g_pixelDraw.ClearLayerPixels();
   SetTransparentTexture();
   g_undoCanvasColorPixels.clear();
   g_redoCanvasColorPixels.clear();
@@ -132,12 +136,13 @@ void CreateCanvas(int pixelSize){
 
 
 void SavePixelArt(char fileName[10]){
-  stbi_write_png(fileName, g_canvasWidth,  g_canvasHeight, 4,  g_mainCanvasPixels, g_canvasWidth*4);
+  stbi_write_png(fileName, g_canvasWidth,  g_canvasHeight, 4,  g_canvasPixels, g_canvasWidth*4);
 }
 
 
-void AddCanvasToUndo(){
-    vector<Color> prevArr(g_mainCanvasPixels, g_mainCanvasPixels+g_canvasPixelsSize);
+void AddPixelsToUndo(){
+    vector<Color> prevArr(g_layerVector[g_selectedLayerIndex].mainLayerPixels, 
+        g_layerVector[g_selectedLayerIndex].mainLayerPixels+g_canvasPixelsSize);
 
     // Copying C-array content to std::array 
     /*copy(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize, prevArr.begin());*/
@@ -152,6 +157,29 @@ void AddCanvasToUndo(){
 
 }
 
+void UpdateAllPixels(){
+  for(int i = 0; i < g_canvasWidth; i++){
+    for(int j = 0; j < g_canvasHeight; j++){
+      for(int l = 0; l < g_layerVector.size(); l++){
+        if(g_layerVector[l].isActive && g_layerVector[l].tmpLayerPixels[i+j*g_canvasWidth] != BLANK){
+          g_canvasPixels[i + j * g_canvasWidth] = g_layerVector[l].tmpLayerPixels[i+j*g_canvasWidth];
+          break;
+        }
+      }
+    }
+  }
+  UpdateTexture(g_mainCanvasTexture, g_canvasPixels);
+}
+
+void UpdateLayerTMPPixels(){
+  memcpy(g_layerVector[g_selectedLayerIndex].mainLayerPixels,g_layerVector[g_selectedLayerIndex].tmpLayerPixels, g_canvasPixelsSize * sizeof(Color));
+}
+
+/*void UpdateMainCanvasPixels(){*/
+/*    // simply can copy from tmp to main*/
+/*    memcpy(g_mainCanvasPixels, g_tmpCanvasPixels, g_canvasPixelsSize * sizeof(Color));*/
+/*    UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);*/
+/*}*/
 
 
 
@@ -167,7 +195,6 @@ void AddCanvasToUndo(){
 
 void Draw() {
   switch (g_pixelDraw.curTool) {  
-
     case Line:
       g_pixelDraw.DrawWithLine(g_LMBHoldingFirstPosOnCanvas.x, g_LMBHoldingFirstPosOnCanvas.y, g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y);
     break;
@@ -214,11 +241,12 @@ void Draw() {
       g_pixelDraw.FillWithColor(g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor);
     break;
   }
-  UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
+  UpdateAllPixels();
 }
 
 void AddCanvasToRedo(){
-    vector<Color> curArr(g_mainCanvasPixels, g_mainCanvasPixels+g_canvasPixelsSize);
+    vector<Color> curArr(g_layerVector[g_selectedLayerIndex].mainLayerPixels,
+        g_layerVector[g_selectedLayerIndex].mainLayerPixels+g_canvasPixelsSize);
 
     // Copying C-array content to std::array 
     /*copy(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize, prevArr.begin());*/
@@ -240,18 +268,18 @@ void StepsControl(){
       if(g_redoCanvasColorPixels.size()){
 
         // Adding current canvas to undo
-        AddCanvasToUndo(); 
+        AddPixelsToUndo(); 
 
         auto step = g_redoCanvasColorPixels.back();
         g_redoCanvasColorPixels.pop_back();
 
-        memcpy(g_mainCanvasPixels, step.data(), g_canvasPixelsSize * sizeof(Color));
+        memcpy(g_layerVector[g_selectedLayerIndex].mainLayerPixels, step.data(), g_canvasPixelsSize * sizeof(Color));
         /*memcpy(g_mainCanvasPixels, prev, g_pixelsSize * sizeof(Color));*/
 
-        memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));
+        /*memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));*/
 
-        UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
-        UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
+        UpdateTexture(g_mainCanvasTexture, g_canvasPixels);
+        /*UpdateTexture(g_tmpCanvasTexture, g_canvasPixels);*/
         
       }
 
@@ -265,13 +293,13 @@ void StepsControl(){
       auto prevStep = g_undoCanvasColorPixels.back();
       g_undoCanvasColorPixels.pop_back();
 
-      memcpy(g_mainCanvasPixels, prevStep.data(), g_canvasPixelsSize * sizeof(Color));
+      memcpy(g_layerVector[g_selectedLayerIndex].mainLayerPixels, prevStep.data(), g_canvasPixelsSize * sizeof(Color));
       /*memcpy(g_mainCanvasPixels, prev, g_pixelsSize * sizeof(Color));*/
 
-      memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));
+      /*memcpy(g_layerVector[g_se], g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));*/
 
-      UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
-      UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);
+      UpdateTexture(g_mainCanvasTexture, g_canvasPixels);
+      /*UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);*/
     }
   }
 }
@@ -376,15 +404,17 @@ void ControlCanvasTransform(){
 void ChangeLayer(int layerIndex){
 
   std::cout<<"Selected Layer: "<<layerIndex<<'\n';
-  memcpy(g_layerVector[g_selectedLayerIndex].g_layerPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));
+  /*memcpy(g_layerVector[g_selectedLayerIndex].g_mainLayerPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));*/
 
   g_selectedLayerIndex = layerIndex;
 
-  memcpy(g_mainCanvasPixels, g_layerVector[g_selectedLayerIndex].g_layerPixels, g_canvasPixelsSize * sizeof(Color));
-  memcpy(g_tmpCanvasPixels, g_layerVector[g_selectedLayerIndex].g_layerPixels, g_canvasPixelsSize * sizeof(Color));
+  /*memcpy(g_mainCanvasPixels, g_layerVector[g_selectedLayerIndex].g_mainLayerPixels, g_canvasPixelsSize * sizeof(Color));*/
+  /*memcpy(g_tmpCanvasPixels, g_layerVector[g_selectedLayerIndex].g_tmpLayerPixels, g_canvasPixelsSize * sizeof(Color));*/
 
-  g_undoCanvasColorPixels = g_layerVector[g_selectedLayerIndex].undoCanvasColorPixels;
-  g_redoCanvasColorPixels = g_layerVector[g_selectedLayerIndex].redoCanvasColorPixels;
+  /*g_undoCanvasColorPixels = g_layerVector[g_selectedLayerIndex].undoCanvasColorPixels;*/
+  /*g_redoCanvasColorPixels = g_layerVector[g_selectedLayerIndex].redoCanvasColorPixels;*/
+
+  g_pixelDraw.ChangeLayer(g_layerVector[g_selectedLayerIndex].mainLayerPixels, g_layerVector[g_selectedLayerIndex].tmpLayerPixels);
 
 }
 
@@ -502,9 +532,9 @@ void DrawAndControlGUI() {
 
 
   if (ImGui::Button("Clear Canvas")) {
-    g_pixelDraw.ClearPixels();
-    UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
-    UpdateTexture(g_tmpCanvasTexture, g_mainCanvasPixels);
+    g_pixelDraw.ClearLayerPixels();
+    UpdateTexture(g_mainCanvasTexture, g_canvasPixels);
+    /*UpdateTexture(g_tmpCanvasTexture, g_mainCanvasPixels);*/
   }
 
   ImGui::SliderInt("Tool Size", &g_pixelDraw.curToolSize, 1, 10);
@@ -584,55 +614,68 @@ void DrawAndControlGUI() {
   /*ImGui::End();*/
 
 
-  ImGui::Begin("Layers");
+  bool isLayersWindowOpened = true;
+  ImGui::Begin("Layers", &isLayersWindowOpened, ImGuiWindowFlags_NoResize);
 
   ImVec2 layersWinPos = ImGui::GetWindowPos();
   
   ImVec2 mousePos = ImGui::GetMousePos();
 
-  // listBox position offset to window pos is x = 10, y = 30 
+  // ListBox position offset to window pos is x = 10, y = 30 
   float mouseYRelativeToListBox = mousePos.y - layersWinPos.y-30;
 
-  ImGui::BeginListBox("##Layers box:");
-  
-  for(int i = 0; i < g_layerVector.size();i++){
+  if(ImGui::BeginListBox("##Layers box:")){
 
-    const bool isSelected = (i == g_selectedLayerIndex);
+    for(int i = 0; i < g_layerVector.size();i++){
 
-    ImGui::Selectable(g_layerVector[i].name.c_str(), isSelected, ImGuiSelectableFlags_None,ImVec2{100,20});
+      const bool isSelected = (i == g_selectedLayerIndex);
 
-    
+      // Getting widget drawing cursor here in order to use it while drawing
+      // next overlapping widgets
+      ImVec2 cursorPos = ImGui::GetCursorPos();
+      ImGui::Selectable(g_layerVector[i].name, isSelected, ImGuiSelectableFlags_AllowOverlap,ImVec2{170,20});
 
-    // Item number from mouseY and item height (20) division
-    int curItem = mouseYRelativeToListBox / 20;
+      /*ImGui::SetCursorPos(ImVec2{cursorPos.x+20, cursorPos.y});*/
+      /*if(ImGui::InputText("##textInput", g_layerVector[i].name, sizeof(g_layerVector[i].name), ImGuiInputTextFlags_)){*/
+      /*}*/
 
-    // Logic to drag selectable layers and swap their places
-    if(ImGui::IsItemFocused() && ImGui::IsMouseDragging(0)){
-      if(curItem >= 0 && curItem != i && curItem < g_layerVector.size()){
-        std::swap(g_layerVector[i], g_layerVector[curItem]);
-        // swapped the indexed so we change the layerIndex on the index of the cur position
-        g_selectedLayerIndex = curItem;
+      
 
-      }       
+      // Item number from mouseY and item height (20) division
+      int curItem = mouseYRelativeToListBox / 20;
+
+      // Logic to drag selectable layers and swap their places
+      if(ImGui::IsItemFocused() && ImGui::IsMouseDragging(0)){
+        if(curItem >= 0 && curItem != i && curItem < g_layerVector.size()){
+          std::swap(g_layerVector[i], g_layerVector[curItem]);
+          // Swapped the indexed so we change the layerIndex on the index of the cur position
+          g_selectedLayerIndex = curItem;
+          UpdateAllPixels();
+          /*UpdateMainCanvasPixels();*/
+
+        }       
+      }
+
+      // Selecting the item on double click
+      if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
+        ChangeLayer(i);
+      }
+      
     }
 
-    // Selecting the item on double click
-    if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
-      ChangeLayer(i);
-    }
-    
+    ImGui::EndListBox();
   }
 
+  
 
-  ImGui::EndListBox();
-
-  /*g_layerListBoxSize = ImGui::GetItemRectSize();*/
 
   if(ImGui::Button("Create layer")){
-    string counterStr = std::to_string(g_layerVector.size()+1);
-    Layer nLayer = Layer{counterStr};
-    /*g_layerVector.insert(g_layerVector.begin(), nLayer);*/
-    g_layerVector.push_back(nLayer);
+    char counterStr[15];
+    strncpy(counterStr, std::to_string(g_layerVector.size()+1).c_str(), sizeof(counterStr));
+    Layer nLayer = Layer{*counterStr};
+    g_layerVector.insert(g_layerVector.begin(), nLayer);
+    // Appending to the beginning so the current index will be index++
+    g_selectedLayerIndex++;
   }
 
   ImGui::End();
@@ -718,13 +761,12 @@ int main(void) {
 
   SetupStyles(io);
 
-  g_pixelDraw.ClearPixels();
+  g_pixelDraw.ClearLayerPixels();
 
-  Image g_image = {g_mainCanvasPixels, g_canvasWidth, g_canvasHeight, 1,
+  Image g_image = {g_canvasPixels, g_canvasWidth, g_canvasHeight, 1,
                    PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
 
   g_mainCanvasTexture = LoadTextureFromImage(g_image);
-  g_tmpCanvasTexture = LoadTextureFromImage(g_image);
 
   g_transparentTexture = LoadTextureFromImage(g_image);
   SetTransparentTexture();
@@ -775,7 +817,7 @@ int main(void) {
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !io.WantCaptureMouse) {
 
 
-      DrawTextureEx(g_tmpCanvasTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
+      DrawTextureEx(g_mainCanvasTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
 
       Draw();
 
@@ -787,11 +829,10 @@ int main(void) {
     }
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
 
-      AddCanvasToUndo();
+      // TODO make layer system work with undo/redo
+      /*AddCanvasToUndo();*/ 
 
-      memcpy(g_mainCanvasPixels, g_tmpCanvasPixels, g_canvasPixelsSize * sizeof(Color));
-
-      UpdateTexture(g_mainCanvasTexture, g_mainCanvasPixels);
+      UpdateLayerTMPPixels();
 
       // Means that we can delete redo after undo's
       if(g_redoCanvasColorPixels.size()){
