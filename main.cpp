@@ -40,6 +40,9 @@ float g_imGuiColorFloat[4]{0.0f, 0.0f, 0.0f, 1.0f}; // BLACK Color
 float g_canvasScale = 1.0f;
 float g_canvasScaleMin = 0.2f;
 float g_canvasScaleMax = 5.0f;
+float g_guiTitleBarHeight = 20.0f;
+float g_guiLayerWidgetHeight = 50.0f;
+float g_guiOffsetBetweenLayerWidgets = 5.0f;
 
 // using texture like global increase performance.
 Texture2D g_mainCanvasTexture;
@@ -522,42 +525,47 @@ void DrawAndControlLayersGUILogic(){
   
   ImVec2 mousePos = ImGui::GetMousePos();
 
-  // the title bar is 20 pixels
-  float mouseYRelativeToWindow = mousePos.y - layersWinPos.y-20;
-
-  // Works better without a layer box..
-  /*if(ImGui::BeginListBox("##Layers box:")){*/
+  // Calculating mouse pos inside the layer's window without the titlebar height and item offset
+  float mouseYRelativeToFirstLayerWidget = mousePos.y - layersWinPos.y-g_guiTitleBarHeight-g_guiOffsetBetweenLayerWidgets;
 
     for(int i = 0; i < g_layerVector.size();i++){
 
+      // Pushing Unique ID in order to change state of each individual Layer Widget (Selectable, InputText, CheckBox)
+      // Only the last element of the array changes without this feature
+      ImGui::PushID(i); // ID by layer index inside of a layer vector
+
+
       const bool isSelected = (i == g_selectedLayerIndex);
+
 
       // Getting widget drawing cursor here in order to use it while drawing
       // next overlapping widgets
-      /*ImVec2 cursorPos = ImGui::GetCursorPos();*/
+      ImVec2 cursorPos = ImGui::GetCursorPos();
       
       // Layer selectable indexation text
-      const char* indexChar = std::to_string(i+1).c_str(); 
-      ImGui::Selectable(indexChar, isSelected, ImGuiSelectableFlags_AllowOverlap,ImVec2{50,20});
+      /*const char* indexChar = std::to_string(i+1).c_str(); */
+      ImGui::Selectable("##selectable text", isSelected, ImGuiSelectableFlags_AllowOverlap,ImVec2{ImGui::GetWindowWidth(),g_guiLayerWidgetHeight});
 
-      /*ImGui::SetCursorPos(ImVec2{cursorPos.x+20, cursorPos.y});*/
       /*if(ImGui::InputText("##textInput", g_layerVector[i].name, sizeof(g_layerVector[i].name), ImGuiInputTextFlags_)){*/
       /*}*/
 
-      // Item number from mouseY and item height (20) division
-      int curItem = mouseYRelativeToWindow / 20;
+      int curItem = mouseYRelativeToFirstLayerWidget / (g_guiLayerWidgetHeight+g_guiOffsetBetweenLayerWidgets);
+      std::cout<<curItem<<'\n';
 
       // Logic to drag selectable layers and swap their places
       if(ImGui::IsItemFocused() && ImGui::IsMouseDragging(0)){
+
         if(curItem >= 0 && curItem != i && curItem < g_layerVector.size()){
+
+          // TODO swap changes items multiple times, have to fix. 
           std::swap(g_layerVector[i], g_layerVector[curItem]);
           // Swapped the indexed so we change the layerIndex on the index of the cur position
           g_selectedLayerIndex = curItem;
           UpdateCanvas();
           std::cout<<"layers swapped"<<'\n';
-          /*UpdateMainCanvasPixels();*/
 
         }       
+
       }
 
       // Selecting the item on double click
@@ -565,12 +573,9 @@ void DrawAndControlLayersGUILogic(){
         ChangeLayer(i);
       }
 
-      // Pushing Unique ID in order to change state of each individual TextBox, CheckBox
-      // Only the last element of the array changes without this feature
-      ImGui::PushID(i); // ID by layer index inside of a layer vector
-      ImGui::SameLine();
 
-      ImGui::InputText("##layer input text", g_layerVector[i].name, sizeof(g_layerVector[i].name));
+      ImGui::SetCursorPos(ImVec2{cursorPos.x+35, cursorPos.y});
+      ImGui::InputText("##layer input text", g_layerVector[i].name, sizeof(g_layerVector[i].name), ImGuiInputTextFlags_AutoSelectAll);
       ImGui::SameLine();
 
       if(ImGui::Checkbox("##layer check box", &g_layerVector[i].isActive)){
@@ -579,13 +584,10 @@ void DrawAndControlLayersGUILogic(){
       }
       // Flushing ID
       ImGui::PopID(); 
+      ImGui::SetCursorPosY(cursorPos.y+g_guiLayerWidgetHeight+10);
       
     }
 
-  /*  ImGui::EndListBox();*/
-  /*}*/
-
-  
 
 
   if(ImGui::Button("Create layer")){
