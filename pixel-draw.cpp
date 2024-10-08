@@ -1,6 +1,7 @@
 #include "pixel-draw.h"
 #include "imgui/imgui.h"
 #include <iostream>
+#include <raylib.h>
 #include <raymath.h>
 
 
@@ -39,7 +40,7 @@ bool PixelDraw::IsOutsideOfCanvas(int x, int y){
   return x < 0 || y < 0 || x >= m_canvasWidth || y >= m_canvasHeight; 
 }
 
-PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Color canvasPixels[], Color mainLayerPixels[], Color tmpLayerPixels[]){
+PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Color canvasPixels[], Color mainLayerPixels[], Color tmpLayerPixels[], Texture2D *mainCanvasTexture){
   this->curDrawingColor = BLACK;
   this->curTool = Tool::Brush;
   this->curToolSize = 1;
@@ -56,6 +57,8 @@ PixelDraw::PixelDraw(int screenWidth, int screenHeight, int pixelBlockSize, Colo
   this->m_canvasPixels = canvasPixels;
   this->m_mainLayerPixels = mainLayerPixels;
   this->m_tmpLayerPixels = tmpLayerPixels;
+
+  this->m_mainCanvasTexture = mainCanvasTexture;
 }
 
 
@@ -338,6 +341,11 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
 void PixelDraw::ResetBufferState(){
   // resetting the buffer to draw only one instance at the time
   memcpy(m_mainLayerPixels, m_tmpLayerPixels, m_canvasPixelsSize * sizeof(Color));
+}
+
+void PixelDraw::ClearCanvas(){
+  PixelDraw::ClearLayerPixels();
+  UpdateTexture(*m_mainCanvasTexture, m_canvasPixels);
 }
 
 
