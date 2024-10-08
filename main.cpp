@@ -3,9 +3,11 @@
 #include "rlImGui/imgui_impl_raylib.h"
 #include "pixel-draw.h"
 #include "raylib.h"
+#include <cctype>
 #include <charconv>
 #include <iostream>
 #include <iterator>
+#include <string>
 #include <vector>
 #include <cstring>
 #include <cmath>
@@ -74,7 +76,7 @@ Color *g_canvasPixels = new Color[g_canvasPixelsSize]();
 
 
 struct Layer{
-  char name[15];
+  char name[32];
   bool isSelected = false;
   bool isActive = true;
 
@@ -158,11 +160,12 @@ void AddPixelsToUndo(){
 }
 
 
-void UpdateAllPixels(){
+void UpdateCanvas(){
 
-  // to remove previous canvas pixels color that are currently blank on some layers
+  // To remove previous canvas pixels color that are currently blank on some layers
   g_pixelDraw.ClearCanvasPixels();
 
+  // Updating canvas pixels according to layer ordering
   for(int i = 0; i < g_canvasWidth; i++){
     for(int j = 0; j < g_canvasHeight; j++){
       for(int l = 0; l < g_layerVector.size(); l++){
@@ -246,7 +249,7 @@ void Draw() {
       g_pixelDraw.FillWithColor(g_lastMousePosOnCanvas.x, g_lastMousePosOnCanvas.y, g_pixelDraw.curDrawingColor);
     break;
   }
-  UpdateAllPixels();
+  UpdateCanvas();
 }
 
 void AddCanvasToRedo(){
@@ -490,6 +493,26 @@ void ControlPopUpWindows(){
   }
 }
 
+/*void ChangeLayerNameIfRequired(int layerIndex){*/
+/**/
+/*  for(int i = 0 ; i < g_layerVector.size(); i++){*/
+/*    if(layerIndex == i) */
+/*      continue;*/
+/**/
+/*    if(strcmp(g_layerVector[i].name,g_layerVector[layerIndex].name) == 0){*/
+/**/
+/*      int len = strlen(g_layerVector[i].name);*/
+/*      std::cout<<len<<'\n';*/
+/*      char lastChar = g_layerVector[i].name[len-1];*/
+/*      if(isdigit(lastChar)){*/
+/*      }*/
+/*      else{*/
+/*        strcat(g_layerVector[layerIndex].name, " 1");*/
+/*      }*/
+/*      return;*/
+/*    }*/
+/*  }*/
+/*}*/
 
 void DrawAndControlLayersGUILogic(){
   bool isLayersWindowOpened = true;
@@ -511,8 +534,11 @@ void DrawAndControlLayersGUILogic(){
 
       // Getting widget drawing cursor here in order to use it while drawing
       // next overlapping widgets
-      ImVec2 cursorPos = ImGui::GetCursorPos();
-      ImGui::Selectable(g_layerVector[i].name, isSelected, ImGuiSelectableFlags_AllowOverlap,ImVec2{170,20});
+      /*ImVec2 cursorPos = ImGui::GetCursorPos();*/
+      
+      // Layer selectable indexation text
+      const char* indexChar = std::to_string(i+1).c_str(); 
+      ImGui::Selectable(indexChar, isSelected, ImGuiSelectableFlags_AllowOverlap,ImVec2{50,20});
 
       /*ImGui::SetCursorPos(ImVec2{cursorPos.x+20, cursorPos.y});*/
       /*if(ImGui::InputText("##textInput", g_layerVector[i].name, sizeof(g_layerVector[i].name), ImGuiInputTextFlags_)){*/
@@ -527,7 +553,7 @@ void DrawAndControlLayersGUILogic(){
           std::swap(g_layerVector[i], g_layerVector[curItem]);
           // Swapped the indexed so we change the layerIndex on the index of the cur position
           g_selectedLayerIndex = curItem;
-          UpdateAllPixels();
+          UpdateCanvas();
           std::cout<<"layers swapped"<<'\n';
           /*UpdateMainCanvasPixels();*/
 
@@ -539,13 +565,17 @@ void DrawAndControlLayersGUILogic(){
         ChangeLayer(i);
       }
 
-      // Pushing Unique ID in order to change state of each individual checkbox
+      // Pushing Unique ID in order to change state of each individual TextBox, CheckBox
       // Only the last element of the array changes without this feature
-      ImGui::PushID(g_layerVector[i].name);
+      ImGui::PushID(i); // ID by layer index inside of a layer vector
       ImGui::SameLine();
+
+      ImGui::InputText("##layer input text", g_layerVector[i].name, sizeof(g_layerVector[i].name));
+      ImGui::SameLine();
+
       if(ImGui::Checkbox("##layer check box", &g_layerVector[i].isActive)){
         //If layer visibility state changed then we need to update canvas pixels
-        UpdateAllPixels();
+        UpdateCanvas();
       }
       // Flushing ID
       ImGui::PopID(); 
@@ -559,12 +589,13 @@ void DrawAndControlLayersGUILogic(){
 
 
   if(ImGui::Button("Create layer")){
-    char counterStr[15];
-    strncpy(counterStr, std::to_string(g_layerVector.size()+1).c_str(), sizeof(counterStr));
-    Layer nLayer = Layer{*counterStr};
+
+    Layer nLayer = Layer{"New layer"};
     g_layerVector.insert(g_layerVector.begin(), nLayer);
-    // Appending to the beginning, setting index to the newly created layer so 0 index
-    /*g_selectedLayerIndex = 0;*/
+
+    /*ChangeLayerNameIfRequired(0);*/
+
+    // Appending to the beginning, so current layer index will be index++
     g_selectedLayerIndex++;
   }
 

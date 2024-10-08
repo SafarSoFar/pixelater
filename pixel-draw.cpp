@@ -194,6 +194,7 @@ void PixelDraw::ControlPixelDraw(int drawPosX, int drawPosY, Color color){
   /*}*/
 }
 
+
 void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color){
 
   if(IsOutsideOfCanvas(drawPosX, drawPosY)){

@@ -68,7 +68,6 @@ class PixelDraw{
     void DrawWithLine(float x0, float y0, float x1, float y1);
     void SetColorFromPos(int originX, int originY);
     bool IsOutsideOfCanvas(int x, int y);
-    void Draw();
 
   private:
     bool m_isFillingCanvas = false;
