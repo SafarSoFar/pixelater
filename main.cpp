@@ -539,9 +539,16 @@ void DrawAndControlLayersGUILogic(){
         ChangeLayer(i);
       }
 
-      // TODO somehow change state state of checkboxes because only the last one is responsive
+      // Pushing Unique ID in order to change state of each individual checkbox
+      // Only the last element of the array changes without this feature
+      ImGui::PushID(g_layerVector[i].name);
       ImGui::SameLine();
-      ImGui::Checkbox("##layer check box", &g_layerVector[i].isActive);
+      if(ImGui::Checkbox("##layer check box", &g_layerVector[i].isActive)){
+        //If layer visibility state changed then we need to update canvas pixels
+        UpdateAllPixels();
+      }
+      // Flushing ID
+      ImGui::PopID(); 
       
     }
 
