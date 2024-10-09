@@ -52,6 +52,8 @@ ImFont* g_iconFont;
 ImFont* g_textFont; 
 Font g_rlFontIcons;
 
+ImGuiIO *io;
+
 bool g_isHoldingLMB;
 bool g_isMouseDraggingCanvas = false;
 bool g_canInteractWithCanvas = true;
@@ -375,7 +377,7 @@ void ControlCanvasTransform(){
   Vector2 mouseWheel = GetMouseWheelMoveV();
 
 
-  if(mouseWheel.y > 0.1f){
+  if(mouseWheel.y > 0.1f && !io->WantCaptureMouse){
     if(g_canvasScale+0.2f > g_canvasScaleMax){
       return;
     }
@@ -383,7 +385,7 @@ void ControlCanvasTransform(){
     CenterCanvasPos();
 
   }
-  else if(mouseWheel.y < -0.1f){
+  else if(mouseWheel.y < -0.1f && !io->WantCaptureMouse){
 
     if(g_canvasScale-0.2f < g_canvasScaleMin){
       return;
@@ -519,7 +521,7 @@ void ControlPopUpWindows(){
 
 void DrawAndControlLayersGUILogic(){
   bool isLayersWindowOpened = true;
-  ImGui::Begin("Layers", &isLayersWindowOpened, ImGuiWindowFlags_NoResize);
+  ImGui::Begin("Layers", &isLayersWindowOpened);
 
   ImVec2 layersWinPos = ImGui::GetWindowPos();
   
@@ -812,9 +814,9 @@ int main(void) {
 
   ImGui::CreateContext();
 
-  ImGuiIO& io = ImGui::GetIO(); (void)io;
+  io = &ImGui::GetIO(); (void)io;
 
-  SetupStyles(io);
+  SetupStyles(*io);
 
   /*g_pixelDraw.ClearLayerPixels();*/
 
@@ -870,7 +872,7 @@ int main(void) {
     
     DrawTextureEx(g_mainCanvasTexture, Vector2{g_canvasPos.x,g_canvasPos.y}, 0.0f, g_canvasScale,WHITE);
 
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !io.WantCaptureMouse) {
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !io->WantCaptureMouse) {
 
       Draw();
 
