@@ -14,7 +14,7 @@ file(GLOB SOURCE_FILES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/imgui/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/rlimgui/*.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/stb/*.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/assets/*"
+  # "${CMAKE_CURRENT_SOURCE_DIR}/assets/*"
   "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/fonts/*")
 
 # file(COPY "/assets" DESTINATION ${CMAKE_BINARY_DIR})
@@ -26,7 +26,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} raylib)
 
 add_custom_target(copy_assets
-  COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" ${CMAKE_CURRENT_BINARY_DIR}/assets
+  # COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" ${CMAKE_CURRENT_BINARY_DIR}/assets
   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/fonts" ${CMAKE_CURRENT_BINARY_DIR}/fonts
 )
 
