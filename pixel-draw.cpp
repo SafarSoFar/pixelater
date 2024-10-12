@@ -195,6 +195,7 @@ void PixelDraw::ControlPixelDraw(int drawPosX, int drawPosY, Color color){
 }
 
 
+
 void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color){
 
   if(IsOutsideOfCanvas(drawPosX, drawPosY)){
@@ -206,6 +207,7 @@ void PixelDraw::DrawPixelBlock(int drawPosX, int drawPosY, Color color){
       m_mainLayerPixels[i + j * m_canvasWidth] = color;
     }
   }
+
   
 }
 
@@ -334,6 +336,7 @@ void PixelDraw::DrawWithLine(float x0, float y0, float x1, float y1) {
 
   }
 }
+
 
 void PixelDraw::ResetBufferState(){
   // resetting the buffer to draw only one instance at the time

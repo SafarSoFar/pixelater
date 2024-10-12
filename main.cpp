@@ -88,13 +88,11 @@ struct Layer{
   // () ensures that each index has default zero value 
   Color *mainLayerPixels = new Color[g_canvasPixelsSize]();
   Color *tmpLayerPixels = new Color[g_canvasPixelsSize]();
-  vector<vector<Color>> undoCanvasColorPixels;
-  vector<vector<Color>> redoCanvasColorPixels;
+  vector<vector<Color>> undoLayerColorPixels{};
+  vector<vector<Color>> redoLayerColorPixels{};
 };
 
 vector<Layer> g_layerVector = {{"1"}};
-vector<vector<Color>> g_undoCanvasColorPixels = g_layerVector[0].undoCanvasColorPixels;
-vector<vector<Color>> g_redoCanvasColorPixels = g_layerVector[0].redoCanvasColorPixels;
 int g_selectedLayerIndex = 0;
 
 
@@ -137,8 +135,7 @@ void CreateCanvas(int pixelSize){
   CenterCanvasPos();
   g_pixelDraw.ClearLayerPixels();
   SetTransparentTexture();
-  g_undoCanvasColorPixels.clear();
-  g_redoCanvasColorPixels.clear();
+  g_layerVector.clear();
 }
 
 
@@ -147,20 +144,21 @@ void SavePixelArt(char fileName[10]){
 }
 
 
-void AddPixelsToUndo(){
+void AddLayerPixelsToUndo(){
     vector<Color> prevArr(g_layerVector[g_selectedLayerIndex].mainLayerPixels, 
         g_layerVector[g_selectedLayerIndex].mainLayerPixels+g_canvasPixelsSize);
+
 
     // Copying C-array content to std::array 
     /*copy(g_mainCanvasPixels, g_mainCanvasPixels+g_pixelsSize, prevArr.begin());*/
     /*memcpy(prevArr, &g_mainCanvasPixels, g_pixelsSize * sizeof(Color));*/
 
     // delete the limited step undo
-    if(g_undoCanvasColorPixels.size() >= 30){
-      g_undoCanvasColorPixels.erase(g_undoCanvasColorPixels.begin());
+    if(g_layerVector[g_selectedLayerIndex].undoLayerColorPixels.size() >= 30){
+      g_layerVector[g_selectedLayerIndex].undoLayerColorPixels.erase(g_layerVector[g_selectedLayerIndex].undoLayerColorPixels.begin());
     }
 
-    g_undoCanvasColorPixels.push_back(prevArr);
+    g_layerVector[g_selectedLayerIndex].undoLayerColorPixels.push_back(prevArr);
 
 }
 
@@ -257,7 +255,7 @@ void Draw() {
   UpdateCanvas();
 }
 
-void AddCanvasToRedo(){
+void AddLayerPixelsToRedo(){
     vector<Color> curArr(g_layerVector[g_selectedLayerIndex].mainLayerPixels,
         g_layerVector[g_selectedLayerIndex].mainLayerPixels+g_canvasPixelsSize);
 
@@ -266,11 +264,11 @@ void AddCanvasToRedo(){
     /*memcpy(prevArr, &g_mainCanvasPixels, g_pixelsSize * sizeof(Color));*/
 
     // delete the limited step undo
-    if(g_redoCanvasColorPixels.size() >= 30){
-      g_redoCanvasColorPixels.erase(g_undoCanvasColorPixels.begin());
+    if(g_layerVector[g_selectedLayerIndex].redoLayerColorPixels.size() >= 30){
+      g_layerVector[g_selectedLayerIndex].redoLayerColorPixels.erase(g_layerVector[g_selectedLayerIndex].redoLayerColorPixels.begin());
     }
 
-    g_redoCanvasColorPixels.push_back(curArr);
+    g_layerVector[g_selectedLayerIndex].redoLayerColorPixels.push_back(curArr);
 }
 
 void StepsControl(){
@@ -278,40 +276,49 @@ void StepsControl(){
 
     // If Left Shift is down - will not go to undo
     if(IsKeyDown(KEY_LEFT_SHIFT)){
-      if(g_redoCanvasColorPixels.size()){
+
+      // REDO FUNCTIONALITY
+
+      if(g_layerVector[g_selectedLayerIndex].redoLayerColorPixels.size()){
 
         // Adding current canvas to undo
-        AddPixelsToUndo(); 
+        AddLayerPixelsToUndo(); 
 
-        auto step = g_redoCanvasColorPixels.back();
-        g_redoCanvasColorPixels.pop_back();
+        auto step = g_layerVector[g_selectedLayerIndex].redoLayerColorPixels.back();
+        g_layerVector[g_selectedLayerIndex].redoLayerColorPixels.pop_back();
 
         memcpy(g_layerVector[g_selectedLayerIndex].mainLayerPixels, step.data(), g_canvasPixelsSize * sizeof(Color));
-        /*memcpy(g_mainCanvasPixels, prev, g_pixelsSize * sizeof(Color));*/
+        UpdateTMPLayerPixels();
 
-        /*memcpy(g_tmpCanvasPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));*/
+        UpdateCanvas();
 
-        UpdateTexture(g_mainCanvasTexture, g_canvasPixels);
         /*UpdateTexture(g_tmpCanvasTexture, g_canvasPixels);*/
+        std::cout<<"pop from redo"<<'\n';
         
       }
 
       return;
     }
 
-    if(g_undoCanvasColorPixels.size()){
-      // Adding current canvas to redo
-      AddCanvasToRedo(); 
+    if(g_layerVector[g_selectedLayerIndex].undoLayerColorPixels.size()){
 
-      auto prevStep = g_undoCanvasColorPixels.back();
-      g_undoCanvasColorPixels.pop_back();
+      // UNDO FUNCTIONALITY
+
+      // Adding current canvas to redo
+      AddLayerPixelsToRedo(); 
+
+      auto prevStep = g_layerVector[g_selectedLayerIndex].undoLayerColorPixels.back();
+      g_layerVector[g_selectedLayerIndex].undoLayerColorPixels.pop_back();
+
+      std::cout<<"undo size: "<<g_layerVector[g_selectedLayerIndex].undoLayerColorPixels.size()<<'\n';
 
       memcpy(g_layerVector[g_selectedLayerIndex].mainLayerPixels, prevStep.data(), g_canvasPixelsSize * sizeof(Color));
+      UpdateTMPLayerPixels();
       /*memcpy(g_mainCanvasPixels, prev, g_pixelsSize * sizeof(Color));*/
 
       /*memcpy(g_layerVector[g_se], g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));*/
 
-      UpdateTexture(g_mainCanvasTexture, g_canvasPixels);
+      UpdateCanvas();
       /*UpdateTexture(g_tmpCanvasTexture, g_tmpCanvasPixels);*/
     }
   }
@@ -416,7 +423,6 @@ void ControlCanvasTransform(){
 
 void ChangeLayer(int layerIndex){
 
-  std::cout<<"Selected Layer: "<<layerIndex<<'\n';
   /*memcpy(g_layerVector[g_selectedLayerIndex].g_mainLayerPixels, g_mainCanvasPixels, g_canvasPixelsSize * sizeof(Color));*/
 
   g_selectedLayerIndex = layerIndex;
@@ -552,7 +558,7 @@ void DrawAndControlLayersGUILogic(){
       /*}*/
 
       int curItem = mouseYRelativeToFirstLayerWidget / (g_guiLayerWidgetHeight+g_guiOffsetBetweenLayerWidgets);
-      std::cout<<curItem<<'\n';
+
 
       // Logic to drag selectable layers and swap their places
       if(ImGui::IsItemFocused() && ImGui::IsMouseDragging(0)){
@@ -855,6 +861,7 @@ int main(void) {
 
     DrawAndControlGUI();
 
+    StepsControl();
 
     ControlGUIHotKeys();
 
@@ -863,7 +870,6 @@ int main(void) {
     SetMousePositions();
     ControlCanvasTransform();
 
-    StepsControl();
     
     ShouldHighlightCenter();
 
@@ -879,15 +885,17 @@ int main(void) {
     }
     if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT)){
 
-      // TODO make layer system work with undo/redo
-      /*AddCanvasToUndo();*/ 
-
       UpdateTMPLayerPixels();
 
+      // TODO make layer system work with undo/redo
+
+
       // Means that we can delete redo after undo's
-      if(g_redoCanvasColorPixels.size()){
-        g_redoCanvasColorPixels.clear();
+      if(g_layerVector[g_selectedLayerIndex].redoLayerColorPixels.size()){
+        g_layerVector[g_selectedLayerIndex].redoLayerColorPixels.clear();
       }
+
+      AddLayerPixelsToUndo();
       
     }
 
